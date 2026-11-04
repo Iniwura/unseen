@@ -28,6 +28,8 @@ npm install
 npm test
 npm run demo
 npm run diagnose:switch
+npm run register:switch
+npm run discover:switch
 npm run reset:local
 npm run replay
 npm start
@@ -37,7 +39,7 @@ npm start
 
 The board is available at `http://127.0.0.1:4173`. It is intentionally read-only: state changes must originate from the authenticated Switch adapter or local trusted runner, never from a browser request.
 
-`npm run replay` repeats the local protocol-harness recovery. `npm run reset:local` removes only the repository-local `.unseen/` state directory. `npm run diagnose:switch` checks configuration presence, the checkout path, Docker availability, and unauthenticated bridge health without printing secret values.
+`npm run replay` repeats the local protocol-harness recovery. `npm run reset:local` removes only the repository-local `.unseen/` state directory. `npm run diagnose:switch` discovers the Switch Console's native local-server ports, checks configuration presence, the checkout path, runtime availability, and unauthenticated bridge health without printing secret values. After the local server is running, `npm run register:switch` uses the local bootstrap registration token in-process, saves only the returned Gatekeeper credentials to ignored owner-only `.env.local`, and `npm run discover:switch` uses authenticated `list_rooms`/`list_participants` operations to resolve exact room IDs. It never guesses IDs or prints credentials.
 
 ## Switch setup
 
@@ -59,14 +61,16 @@ UNSEEN/1 {"kind":"approval","decisionId":"…","sha":"…","evidenceDigest":"…
 
 The live coordinator in `scripts/live-bridge.mjs` turns those authenticated events into the complete visible workflow: it asks engineering for baseline evidence, asks the investigator for support evidence, runs the fixed allowlisted commands against the exact candidate SHA, blocks failed regressions, asks the coding agent for a repaired SHA, independently retests that SHA, and issues a one-use approval challenge. A human approval produces an auditable preview receipt; it never deploys from the chat adapter.
 
-For a single local setup file, copy `.env.example` to `.env.local`, fill it from Switch Console, and run:
+For a single local setup file, start the Switch Console Local server, then run the secret-safe bootstrap and discovery path:
 
 ```bash
 npm run diagnose:switch
+npm run register:switch
+npm run discover:switch
 npm run connect:switch
 ```
 
-`.env.local` is ignored by Git. The bridge also persists only cursors, workflow state, audit state, and sanitized connection status under `.unseen/`; it never logs or writes the API key.
+`register:switch` discovers the native Core endpoint and reads the local registration bootstrap token only in memory. It saves the returned Gatekeeper ID/API key and exact room IDs only to ignored owner-only `.env.local`; it never logs or writes the bootstrap token. Remaining human/agent role IDs are intentionally explicit configuration, not inferred from names. The bridge also persists only cursors, workflow state, audit state, and sanitized connection status under `.unseen/`; it never logs or writes the API key.
 
 The message body is not authentication. The adapter authenticates the WebSocket connection, checks the server-provided connection state and room membership, matches the opaque Switch sender ID against its configured participant directory, and only then forwards the event to the gate.
 
@@ -122,10 +126,14 @@ Do not put the API key in the browser, a public repo, or a screenshot. Use the S
 | `public/` | Restrained evidence board UI |
 | `test/` | Policy, security, Switch-ingestion, runner, and server tests |
 | `scripts/diagnose-switch.mjs` | Secret-safe host/bridge connection diagnostic |
+| `scripts/register-switch.mjs` | Authenticated local Gatekeeper registration |
+| `scripts/discover-switch.mjs` | Authenticated room/participant discovery |
 
-## Known boundary
+## Evidence labels and live boundary
 
-Live Switch Console / Mattermost traffic is not verified in this environment. Docker is unavailable in the current WSL distro, and no Switch credentials were supplied. The live coordinator and durable reconnect/gap recovery path are implemented and tested against adversarial protocol fixtures, but the live event exchange, live room IDs, live participant identities, and human approval remain unverified until the authenticated Console setup is performed. No credentials, deployment, or mainnet action is part of this repository.
+The local recovery demo is labelled `simulated-protocol-harness`; its Git checkout, test execution, and receipt are real, but its messages are not Switch traffic. A live run is labelled `live-switch` in `.unseen/live-status.json` and the board, and requires the authenticated Core/WebSocket path. The live coordinator never deploys from chat: a human approval produces an auditable `release-preview` receipt only.
+
+The native Switch endpoint is discovered from Switch Console metadata rather than guessed. If the diagnostic reports the endpoint but it is unreachable, start the Local server in Switch Console and rerun the diagnostic. No credentials, deployment, or mainnet action is part of this repository.
 
 Official references used for the implementation:
 

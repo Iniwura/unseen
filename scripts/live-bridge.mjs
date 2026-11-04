@@ -5,9 +5,12 @@ import { SwitchClient } from '../src/switch-client.mjs';
 import { SwitchEventIngestor } from '../src/switch-ingest.mjs';
 import { createJsonStore } from '../src/store.mjs';
 import { loadLocalEnv } from '../src/env.mjs';
+import { discoverLocalSwitch } from '../src/local-switch.mjs';
 
 loadLocalEnv();
 const env = process.env;
+const localSwitch = discoverLocalSwitch();
+if (!env.SWITCH_BRIDGE_URL && localSwitch?.bridgeUrl) env.SWITCH_BRIDGE_URL = localSwitch.bridgeUrl;
 const required = [
   'SWITCH_BRIDGE_URL', 'SWITCH_AGENT_ID', 'SWITCH_AGENT_API_KEY',
   'SWITCH_RELEASE_ROOM_ID', 'SWITCH_SUPPORT_ROOM_ID',

@@ -10,6 +10,8 @@
     "replay": "node scripts/replay.mjs",
     "reset:local": "node scripts/reset-local.mjs",
     "diagnose:switch": "node scripts/diagnose-switch.mjs",
+    "register:switch": "node scripts/register-switch.mjs",
+    "discover:switch": "node scripts/discover-switch.mjs",
     "connect:switch": "node scripts/live-bridge.mjs",
     "start": "node src/server.mjs"
   },
