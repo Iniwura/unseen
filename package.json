@@ -1,8 +1,16 @@
 {
-  "name": "unseen-phase1",
+  "name": "unseen",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "engines": {"node": ">=20"},
-  "scripts": {"test": "node --test", "demo": "node demo/blocked.mjs"}
+  "scripts": {
+    "test": "node --test",
+    "demo": "node demo/recovery.mjs",
+    "connect:switch": "node scripts/live-bridge.mjs",
+    "start": "node src/server.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
 }

@@ -2,9 +2,15 @@
 
 We're inside the Flip the Switch hackathon window (Nov 4–7, 2026). The owner has locked the UNSEEN Blind-Spot Recovery workflow for **Best Business Workflow**.
 
+## Implementation checkpoint — 2026-11-04
+
+The repository now contains the durable fail-closed gate, the current Switch WebSocket/HTTP client, authenticated frame ingestor, atomic JSON state store, allowlisted real process runner, nonce-bound Switch human approval, one-use execution receipt, read-only board, adversarial tests, and `npm run demo` actual-code recovery workflow. The original 20 Phase 1 tests are preserved and pass alongside the new security and integration tests.
+
+Live Switch Console / Docker / Mattermost verification is still outstanding. This environment has no Docker executable in WSL and no Switch credentials. The local demo and Switch adapter tests are explicitly labelled as a protocol harness; they are not evidence of live Switch traffic.
+
 ## Goal
 
-Implement a genuine Switch-powered human/AI release-readiness workflow. The offline Node.js gate in `src/gate.mjs` is a small foundation, **not** an authenticated Switch integration. All current verification reports in `demo/blocked.mjs` are synthetic fixtures and must never be described as real Switch events.
+Implement a genuine Switch-powered human/AI release-readiness workflow. The Node.js gate in `src/gate.mjs` is now durable and fail-closed, and `src/switch-client.mjs` / `src/switch-ingest.mjs` implement the current authenticated adapter boundary. Live Switch traffic still needs host setup and must never be conflated with the local protocol harness in `demo/recovery.mjs`.
 
 ## Run the starting checks
 
@@ -36,4 +42,12 @@ npm run demo
 
 ## User design preference
 
-Aim for Linear / Apple Notes simplicity. Clear purpose, architecture and interface. Remove unnecessary taglines and secondary labels. No UI until the real Switch flow and authorization checks can be demonstrated.
+Aim for Linear / Apple Notes simplicity. Clear purpose, architecture and interface. Remove unnecessary taglines and secondary labels. The read-only board is shipped, but do not present its local harness state as live Switch evidence.
+
+## Remaining before submission
+
+1. Install Docker Desktop and the official Switch Console on Windows; sign in to Codex.
+2. Create `release-room` and `support-room` in bundled Mattermost, register the UNSEEN agent once, and capture the real room and participant IDs.
+3. Run the adapter against the authenticated Switch bridge and record a real human mention, investigator handoff, and approval. Keep all credentials out of the repo and recording.
+4. Capture the live demo, screenshots, and command output. Label the local harness and live run separately in the submission.
+5. If the release action will run untrusted candidate code outside a container, add a container or equivalent sandbox before production use; the current runner is allowlisted but intentionally reports this host-execution boundary.

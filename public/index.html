@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Evidence-backed release decisions for teams and AI agents.">
+    <title>UNSEEN — release evidence</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="wordmark" href="/" aria-label="UNSEEN home">UNSEEN<span class="dot">.</span></a>
+        <div class="connection" id="connection"><span class="pulse"></span><span>Switch not connected</span></div>
+      </header>
+
+      <section class="intro" aria-labelledby="title">
+        <p class="eyebrow">Release control</p>
+        <h1 id="title">See what the release is missing.</h1>
+        <p class="lede">Evidence from the people and agents closest to the work, bound to one exact artifact.</p>
+      </section>
+
+      <section class="board" aria-live="polite">
+        <div class="board-head">
+          <div>
+            <p class="eyebrow">Current decisions</p>
+            <h2 id="decision-count">No release under review</h2>
+          </div>
+          <span class="board-note" id="last-updated">Waiting for evidence</span>
+        </div>
+        <div class="decisions" id="decisions"></div>
+        <div class="empty" id="empty">
+          <div class="empty-mark">○</div>
+          <p>A decision appears here when a release owner starts a review.</p>
+          <span>UNSEEN stays quiet until Switch supplies a real event.</span>
+        </div>
+        <section class="detail" id="detail" hidden aria-live="polite">
+          <div class="detail-head"><div><p class="eyebrow">Decision replay</p><h3 id="detail-title"></h3></div><button id="detail-close" type="button" aria-label="Close decision replay">Close</button></div>
+          <div class="evidence-graph" id="evidence-graph"></div>
+          <div class="replay"><div><p class="eyebrow">Audit trail</p><div id="audit-trail"></div></div><div><p class="eyebrow">Counterfactual</p><p class="counterfactual" id="counterfactual"></p></div></div>
+        </section>
+      </section>
+
+      <section class="principles" aria-label="How UNSEEN works">
+        <article><span>01</span><h3>Gather</h3><p>Rooms carry the evidence that a single release view cannot see.</p></article>
+        <article><span>02</span><h3>Challenge</h3><p>Contradictions and failed verification stop the artifact at the gate.</p></article>
+        <article><span>03</span><h3>Prove</h3><p>Only the exact tested commit can become an authorized decision.</p></article>
+      </section>
+
+      <footer><span>Evidence is the interface.</span><a href="https://docs.switchagents.ai/switch-rooms/internals/agent-protocol" rel="noreferrer">Switch protocol ↗</a></footer>
+    </main>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
