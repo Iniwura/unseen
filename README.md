@@ -70,6 +70,8 @@ npm run discover:switch
 npm run connect:switch
 ```
 
+From native Windows PowerShell, the same sequence can be run from the repository checkout with `.\scripts\connect-switch-native.ps1`. It skips registration when `.env.local` already contains a Gatekeeper ID, so it cannot rotate an existing registration.
+
 `register:switch` discovers the native Core endpoint and reads the local registration bootstrap token only in memory. It saves the returned Gatekeeper ID/API key and exact room IDs only to ignored owner-only `.env.local`; it never logs or writes the bootstrap token. Remaining human/agent role IDs are intentionally explicit configuration, not inferred from names. The bridge also persists only cursors, workflow state, audit state, and sanitized connection status under `.unseen/`; it never logs or writes the API key.
 
 The message body is not authentication. The adapter authenticates the WebSocket connection, checks the server-provided connection state and room membership, matches the opaque Switch sender ID against its configured participant directory, and only then forwards the event to the gate.
@@ -128,6 +130,7 @@ Do not put the API key in the browser, a public repo, or a screenshot. Use the S
 | `scripts/diagnose-switch.mjs` | Secret-safe host/bridge connection diagnostic |
 | `scripts/register-switch.mjs` | Authenticated local Gatekeeper registration |
 | `scripts/discover-switch.mjs` | Authenticated room/participant discovery |
+| `scripts/connect-switch-native.ps1` | Native Windows bootstrap and live bridge launcher |
 
 ## Evidence labels and live boundary
 
