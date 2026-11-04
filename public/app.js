@@ -16,8 +16,10 @@ const stateClass = (state) => state === 'VERIFIED_PASS' ? 'pass' : state === 'VE
 
 function render(data) {
   const decisions = data.decisions ?? [];
-  const connected = data.metadata?.switch === 'configured';
-  connectionNode.innerHTML = `<span class="pulse ${connected ? 'live' : ''}"></span><span>${connected ? 'Switch configured' : 'Switch not connected'}</span>`;
+  const switchStatus = data.metadata?.switch ?? 'not connected';
+  const connected = switchStatus === 'connected';
+  const switchLabel = connected ? 'Switch live' : switchStatus === 'reconnecting' || switchStatus === 'connect-error' ? 'Switch reconnecting' : switchStatus === 'gap' ? 'Switch recovering' : 'Switch not connected';
+  connectionNode.innerHTML = `<span class="pulse ${connected ? 'live' : ''}"></span><span>${switchLabel}</span>`;
   countNode.textContent = decisions.length === 0 ? 'No release under review' : `${decisions.length} release${decisions.length === 1 ? '' : 's'} under review`;
   emptyNode.hidden = decisions.length !== 0;
   updatedNode.textContent = decisions.length === 0 ? 'Waiting for evidence' : `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;

@@ -37,13 +37,17 @@ function staticFile(response, publicDir, pathname) {
   }
 }
 
-export function createUnseenServer({ gate, publicDir = resolve(fileURLToPath(new URL('../public', import.meta.url))), metadata = {} } = {}) {
+export function createUnseenServer({ gate, publicDir = resolve(fileURLToPath(new URL('../public', import.meta.url))), metadata = {}, liveStatusStore = null } = {}) {
   if (!gate || typeof gate.list !== 'function') throw new TypeError('A gate is required');
+  const currentMetadata = () => {
+    const live = liveStatusStore?.load?.() ?? null;
+    return { ...metadata, switch: live?.status ?? metadata.switch ?? 'not connected', switchEvidence: live?.evidence ?? metadata.switchEvidence ?? 'simulated-or-unverified', liveStatus: live };
+  };
   return createHttpServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://unseen.local');
     if (request.method === 'GET' && url.pathname === '/health') return json(response, 200, { ok: true, service: 'unseen', mode: 'read-only-board' });
     if (request.method === 'GET' && url.pathname === '/api/state') {
-      return json(response, 200, { decisions: gate.list(), metadata: { ...metadata, switch: metadata.switch ?? 'not connected' } });
+      return json(response, 200, { decisions: gate.list(), metadata: currentMetadata() });
     }
     const decisionMatch = url.pathname.match(/^\/api\/decisions\/([^/]+)(?:\/(audit|counterfactual))?$/);
     if (request.method === 'GET' && decisionMatch) {
@@ -63,9 +67,10 @@ export function createUnseenServer({ gate, publicDir = resolve(fileURLToPath(new
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const statePath = process.env.UNSEEN_STATE_PATH ?? resolve('.unseen/state.json');
+  const liveStatusPath = process.env.UNSEEN_LIVE_STATUS_PATH ?? resolve('.unseen/live-status.json');
   const authorizedHumans = (process.env.UNSEEN_AUTHORIZED_HUMANS ?? '').split(',').map((value) => value.trim()).filter(Boolean);
   const gate = createGate({ store: createJsonStore(statePath), authorizedHumans });
-  const server = createUnseenServer({ gate, metadata: { switch: process.env.SWITCH_BRIDGE_URL ? 'configured' : 'not configured' } });
+  const server = createUnseenServer({ gate, liveStatusStore: createJsonStore(liveStatusPath), metadata: { switchEvidence: 'live status not observed' } });
   const port = Number(process.env.PORT ?? 4173);
   server.listen(port, '127.0.0.1', () => console.log(`UNSEEN board listening at http://127.0.0.1:${port}`));
 }

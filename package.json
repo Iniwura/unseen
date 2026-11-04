@@ -7,6 +7,9 @@
   "scripts": {
     "test": "node --test",
     "demo": "node demo/recovery.mjs",
+    "replay": "node scripts/replay.mjs",
+    "reset:local": "node scripts/reset-local.mjs",
+    "diagnose:switch": "node scripts/diagnose-switch.mjs",
     "connect:switch": "node scripts/live-bridge.mjs",
     "start": "node src/server.mjs"
   },

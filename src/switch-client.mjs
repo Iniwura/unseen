@@ -29,6 +29,20 @@ function normalizeFrame(value) {
   return { event: frame?.type ?? null, id: null, data: frame };
 }
 
+function waitFor(ms, signal) {
+  return new Promise((resolve) => {
+    if (signal?.aborted) return resolve();
+    let timer;
+    const done = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', done);
+      resolve();
+    };
+    timer = setTimeout(done, ms);
+    signal?.addEventListener('abort', done, { once: true });
+  });
+}
+
 export class SwitchClient {
   constructor({
     bridgeUrl,
@@ -131,39 +145,55 @@ export class SwitchClient {
     if (saved.generation !== undefined && saved.generation !== null) params.set('expected_generation', String(saved.generation));
     const socketUrl = `${toSocketUrl(this.bridgeUrl)}/agents/${encodeURIComponent(this.agentId)}/connection/ws?${params}`;
     const socket = new this.WebSocketImpl(socketUrl, { headers: { Authorization: `Bearer ${this.apiKey}` } });
-    const state = { socket, connectionId, agentId: this.agentId, authenticated: false, cursor: saved.cursor ?? 0, generation: saved.generation ?? null, rooms: [], closed: false };
+    let closeResolve;
+    const closedPromise = new Promise((resolve) => { closeResolve = resolve; });
+    const state = { socket, connectionId, agentId: this.agentId, authenticated: false, cursor: saved.cursor ?? 0, generation: saved.generation ?? null, rooms: [], closed: false, evictionCode: null, closeReason: null };
     const connection = {
       ...state,
       send: (value) => socket.send(JSON.stringify(value)),
+      closedPromise,
       close: () => { state.closed = true; socket.close(); }
     };
     const opened = new Promise((resolve, reject) => {
       socket.once('open', () => { state.authenticated = true; connection.authenticated = true; resolve(connection); });
       socket.once('error', reject);
     });
-    socket.on('message', async (raw) => {
-      try {
-        const frame = normalizeFrame(raw);
-        if (frame.event === 'connection_state') {
-          state.cursor = frame.data.cursor ?? state.cursor;
-          state.generation = frame.data.generation ?? state.generation;
-          state.rooms = Array.isArray(frame.data.rooms) ? [...frame.data.rooms] : [];
-          connection.rooms = state.rooms;
-          connection.cursor = state.cursor;
-          this.connectionStore?.save?.({ connectionId, cursor: state.cursor, generation: state.generation, rooms: state.rooms });
-        } else if (frame.event === 'ping') {
-          connection.send({ type: 'pong', cursor: state.cursor });
-        } else if (Number.isInteger(frame.id)) {
-          state.cursor = Math.max(state.cursor, frame.id);
-          this.connectionStore?.save?.({ connectionId, cursor: state.cursor, generation: state.generation, rooms: state.rooms });
+    let frameChain = Promise.resolve();
+    socket.on('message', (raw) => {
+      frameChain = frameChain.then(async () => {
+        try {
+          const frame = normalizeFrame(raw);
+          if (frame.event === 'connection_state') {
+            state.cursor = frame.data.cursor ?? state.cursor;
+            state.generation = frame.data.generation ?? state.generation;
+            state.rooms = Array.isArray(frame.data.rooms) ? [...frame.data.rooms] : [];
+            connection.rooms = state.rooms;
+            connection.cursor = state.cursor;
+            this.connectionStore?.save?.({ connectionId, cursor: state.cursor, generation: state.generation, rooms: state.rooms });
+          } else if (frame.event === 'ping') {
+            connection.send({ type: 'pong', cursor: state.cursor });
+          } else if (frame.event === 'evicted') {
+            state.evictionCode = frame.data?.code ?? null;
+            connection.evictionCode = state.evictionCode;
+          } else if (Number.isInteger(frame.id)) {
+            state.cursor = Math.max(state.cursor, frame.id);
+            this.connectionStore?.save?.({ connectionId, cursor: state.cursor, generation: state.generation, rooms: state.rooms });
+          }
+          await onFrame(frame, connection);
+        } catch (error) {
+          onError(error);
         }
-        await onFrame(frame, connection);
-      } catch (error) {
-        onError(error);
-      }
+      });
     });
     socket.on('error', onError);
-    socket.on('close', () => { state.closed = true; });
+    socket.on('close', (code, reason) => {
+      state.closed = true;
+      state.closeReason = reason?.toString?.() ?? null;
+      connection.closed = true;
+      connection.evictionCode = state.evictionCode;
+      connection.closeReason = state.closeReason;
+      frameChain.then(() => closeResolve({ code, reason: state.closeReason, evictionCode: state.evictionCode }), () => closeResolve({ code, reason: state.closeReason, evictionCode: state.evictionCode }));
+    });
     return opened;
   }
 
@@ -177,6 +207,44 @@ export class SwitchClient {
       }
     }
     throw lastError;
+  }
+
+  /**
+   * Keep one authenticated connection alive. A reconnect reuses the persisted
+   * connection ID, cursor, and generation; a `taken_over` eviction is final.
+   * The caller owns the AbortSignal so a normal shutdown is explicit.
+   */
+  async runResilient({ maxReconnects = Infinity, initialDelayMs = 500, maxDelayMs = 10_000, signal, onConnection = () => {}, ...options } = {}) {
+    let reconnects = 0;
+    while (!signal?.aborted) {
+      let connection;
+      try {
+        connection = await this.connect(options);
+      } catch (error) {
+        await onConnection({ status: 'connect-error', error });
+        if (reconnects >= maxReconnects) throw error;
+        await waitFor(Math.min(maxDelayMs, initialDelayMs * (2 ** reconnects)), signal);
+        reconnects += 1;
+        continue;
+      }
+      reconnects = 0;
+      await onConnection({ status: 'connected', connection });
+      const closeResult = await Promise.race([
+        connection.closedPromise,
+        signal ? (signal.aborted ? Promise.resolve({ aborted: true }) : new Promise((resolve) => signal.addEventListener('abort', () => resolve({ aborted: true }), { once: true }))) : new Promise(() => {})
+      ]);
+      if (closeResult?.aborted) {
+        await onConnection({ status: 'closed', connection, closeResult });
+        connection.close();
+        return connection;
+      }
+      await onConnection({ status: closeResult?.evictionCode === 'taken_over' ? 'taken_over' : 'disconnected', connection, closeResult });
+      if (closeResult?.evictionCode === 'taken_over') return connection;
+      if (reconnects >= maxReconnects) throw new SwitchProtocolError('RECONNECT_EXHAUSTED', 'Switch connection closed and reconnect limit was reached');
+      await waitFor(Math.min(maxDelayMs, initialDelayMs * (2 ** reconnects)), signal);
+      reconnects += 1;
+    }
+    return null;
   }
 }
 

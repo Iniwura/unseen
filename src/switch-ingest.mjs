@@ -13,7 +13,7 @@ function participantLookup(participants, id) {
   return participants?.[id];
 }
 
-function parseUnseenMessage(body) {
+export function parseUnseenMessage(body) {
   if (typeof body !== 'string') return null;
   const prefix = 'UNSEEN/1 ';
   if (!body.startsWith(prefix)) return null;
@@ -38,7 +38,9 @@ export class SwitchEventIngestor {
     participants,
     bridgeId = null,
     eventStore = createMemoryStore(),
-    onRemediation = null
+    onRemediation = null,
+    onCommand = null,
+    selfSenderId = agentId
   } = {}) {
     assert(gate && typeof gate.discover === 'function' && typeof gate.approveFromSwitch === 'function', 'BAD_GATE', 'A gate is required');
     assert(typeof agentId === 'string' && agentId.length > 0, 'BAD_AGENT', 'Authenticated agent ID is required');
@@ -54,6 +56,8 @@ export class SwitchEventIngestor {
     this.connectionRooms = new Set();
     this.gapDetected = false;
     this.onRemediation = onRemediation;
+    this.onCommand = onCommand;
+    this.selfSenderId = selfSenderId;
   }
 
   persist() { this.eventStore.save?.({ seen: [...this.seen] }); }
@@ -94,6 +98,10 @@ export class SwitchEventIngestor {
     if (frame.event !== 'message') { remember(); return { ignored: true, event: frame.event, eventId: eventKey }; }
     const payload = frame.data.payload;
     assert(payload && typeof payload === 'object', 'BAD_MESSAGE', 'Switch message payload is missing');
+    if (payload.sender === this.selfSenderId) {
+      remember();
+      return { ignored: true, self: true, event: 'message', eventId: eventKey };
+    }
     const identity = participantLookup(this.participants, payload.sender);
     assert(identity && typeof identity.kind === 'string' && typeof identity.role === 'string', 'UNTRUSTED_SENDER', 'Message sender is not in the configured Switch participant directory');
     assert(!policy.allowedRoles || policy.allowedRoles.includes(identity.role), 'SENDER_NOT_PERMITTED', 'Sender is not permitted in this room');
@@ -112,7 +120,7 @@ export class SwitchEventIngestor {
         collector: payload.sender
       });
       remember();
-      return { accepted: true, type: 'evidence', eventId: eventKey, decision: result };
+      return { accepted: true, type: 'evidence', eventId: eventKey, requirementId: command.requirementId, decision: result };
     }
     if (command.kind === 'approval') {
       assert(identity.kind === 'human' && identity.role === 'release-owner', 'APPROVAL_SENDER_DENIED', 'Only the configured human release owner can approve');
@@ -131,15 +139,33 @@ export class SwitchEventIngestor {
       remember();
       return { accepted: true, type: 'approval', eventId: eventKey, decision: result };
     }
-    if (command.kind === 'remediation') {
+    if (command.kind === 'release_request') {
+      assert(identity.kind === 'human' && identity.role === 'release-owner', 'RELEASE_SENDER_DENIED', 'Only the configured human release owner can request a release');
+      assert(policy.name === 'release-room', 'RELEASE_ROOM_DENIED', 'Release requests must originate in release-room');
+      assert(typeof this.onCommand === 'function', 'COMMAND_UNAVAILABLE', 'No release command handler is installed');
+      const result = this.onCommand({ ...command, sender: payload.sender, room: policy.name, eventId: messageId });
+      remember();
+      return { accepted: true, type: 'release_request', eventId: eventKey, result, command };
+    }
+    if (command.kind === 'remediation' || command.kind === 'remediation_ready') {
       assert(identity.kind === 'agent' && identity.role === 'coding-agent', 'REMEDIATION_SENDER_DENIED', 'Only the configured coding agent can submit remediation work');
       assert(typeof this.onRemediation === 'function', 'REMEDIATION_UNAVAILABLE', 'No authorized remediation handler is installed');
       const result = this.onRemediation({ ...command, sender: payload.sender, room: policy.name, eventId: messageId });
       remember();
       return { accepted: true, type: 'remediation', eventId: eventKey, result };
     }
+    if (typeof this.onCommand === 'function') {
+      const result = this.onCommand({ ...command, sender: payload.sender, room: policy.name, eventId: messageId });
+      remember();
+      return { accepted: true, type: command.kind ?? 'command', eventId: eventKey, result, command };
+    }
     remember();
     return { ignored: true, event: 'message', eventId: eventKey, addressed: true, command: command.kind ?? null };
+  }
+
+  markContextReloaded() {
+    this.gapDetected = false;
+    return true;
   }
 }
 

@@ -64,3 +64,33 @@ test('approval message requires a human release owner and Switch authentication'
   const approval = ingestor.handleFrame(frame(3, 'room-release', '@switch-user-release-owner:local', unseenMessage({ kind: 'approval', decisionId: decision.id, sha: SHA, evidenceDigest: challenge.evidenceDigest, nonce: challenge.nonce })), connection);
   assert.equal(approval.decision.status, 'AUTHORIZED');
 });
+
+test('release requests are restricted to the human owner and self-authored messages are ignored', () => {
+  const { gate, decision, ingestor, connection } = setup();
+  let command = null;
+  const releaseIngestor = new SwitchEventIngestor({
+    gate,
+    agentId: 'unseen-agent',
+    selfSenderId: 'unseen-agent',
+    roomPolicies: policies,
+    participants,
+    eventStore: createMemoryStore(),
+    onCommand(value) { command = value; return value; }
+  });
+  releaseIngestor.handleFrame({ event: 'connection_state', id: null, data: { type: 'connection_state', agent_id: 'unseen-agent', rooms: ['room-release', 'room-support'], cursor: 0, generation: 1 } }, connection);
+  const requested = releaseIngestor.handleFrame(frame(7, 'room-release', '@switch-user-release-owner:local', unseenMessage({ kind: 'release_request', sha: SHA, decisionId: 'RELEASE-REQUEST-1' })), connection);
+  assert.equal(requested.type, 'release_request');
+  assert.equal(command.decisionId, 'RELEASE-REQUEST-1');
+  assert.deepEqual(releaseIngestor.handleFrame(frame(8, 'room-release', 'unseen-agent', unseenMessage({ kind: 'status', value: 'visible' })), connection), { ignored: true, self: true, event: 'message', eventId: 'unseen-agent:8' });
+  assert.throws(() => ingestor.handleFrame(frame(9, 'room-release', 'switch-agent-engineering', unseenMessage({ kind: 'release_request', sha: SHA })), connection), (error) => error.code === 'RELEASE_SENDER_DENIED');
+  assert.equal(gate.describe(decision.id).status, 'PENDING_EVIDENCE');
+});
+
+test('a gap can be acknowledged only after the context reload path runs', () => {
+  const { ingestor, connection } = setup();
+  const gap = ingestor.handleFrame({ event: 'gap', id: null, data: { from: 10, to: 14 } }, connection);
+  assert.equal(gap.requiresContextReload, true);
+  assert.equal(ingestor.gapDetected, true);
+  assert.equal(ingestor.markContextReloaded(), true);
+  assert.equal(ingestor.gapDetected, false);
+});

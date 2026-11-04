@@ -27,12 +27,17 @@ Requires Node.js 20+.
 npm install
 npm test
 npm run demo
+npm run diagnose:switch
+npm run reset:local
+npm run replay
 npm start
 ```
 
 `npm test` runs the preserved Phase 1 tests plus security, Switch-ingestion, runner, and server tests. `npm run demo` is the reproducible Blind-Spot Recovery workflow and reports the exact temporary commit hashes and test output digests it observed.
 
 The board is available at `http://127.0.0.1:4173`. It is intentionally read-only: state changes must originate from the authenticated Switch adapter or local trusted runner, never from a browser request.
+
+`npm run replay` repeats the local protocol-harness recovery. `npm run reset:local` removes only the repository-local `.unseen/` state directory. `npm run diagnose:switch` checks configuration presence, the checkout path, Docker availability, and unauthenticated bridge health without printing secret values.
 
 ## Switch setup
 
@@ -46,9 +51,22 @@ Create two rooms in Switch Console / bundled Mattermost:
 The adapter expects addressed messages with this explicit envelope:
 
 ```text
+UNSEEN/1 {"kind":"release_request","decisionId":"…","sha":"…"}
 UNSEEN/1 {"kind":"evidence","decisionId":"…","requirementId":"support","documentDigest":"…"}
+UNSEEN/1 {"kind":"remediation_ready","decisionId":"…","newSha":"…"}
 UNSEEN/1 {"kind":"approval","decisionId":"…","sha":"…","evidenceDigest":"…","nonce":"…"}
 ```
+
+The live coordinator in `scripts/live-bridge.mjs` turns those authenticated events into the complete visible workflow: it asks engineering for baseline evidence, asks the investigator for support evidence, runs the fixed allowlisted commands against the exact candidate SHA, blocks failed regressions, asks the coding agent for a repaired SHA, independently retests that SHA, and issues a one-use approval challenge. A human approval produces an auditable preview receipt; it never deploys from the chat adapter.
+
+For a single local setup file, copy `.env.example` to `.env.local`, fill it from Switch Console, and run:
+
+```bash
+npm run diagnose:switch
+npm run connect:switch
+```
+
+`.env.local` is ignored by Git. The bridge also persists only cursors, workflow state, audit state, and sanitized connection status under `.unseen/`; it never logs or writes the API key.
 
 The message body is not authentication. The adapter authenticates the WebSocket connection, checks the server-provided connection state and room membership, matches the opaque Switch sender ID against its configured participant directory, and only then forwards the event to the gate.
 
@@ -97,15 +115,17 @@ Do not put the API key in the browser, a public repo, or a screenshot. Use the S
 | `src/runner.mjs` | Restricted real process execution and HMAC attestations |
 | `src/switch-client.mjs` | Current Switch HTTP + WebSocket protocol client |
 | `src/switch-ingest.mjs` | Authenticated frame validation and room workflow mapping |
+| `src/live-orchestrator.mjs` | Visible live release/evidence/remediation/approval workflow |
 | `src/store.mjs` | Atomic JSON and in-memory persistence adapters |
 | `src/server.mjs` | Read-only board and JSON APIs |
 | `demo/recovery.mjs` | Reproducible actual-code Blind-Spot Recovery demo |
 | `public/` | Restrained evidence board UI |
 | `test/` | Policy, security, Switch-ingestion, runner, and server tests |
+| `scripts/diagnose-switch.mjs` | Secret-safe host/bridge connection diagnostic |
 
 ## Known boundary
 
-Live Switch Console / Mattermost traffic is not verified in this environment. Docker is unavailable in the current WSL distro, and no Switch credentials were supplied. The implementation is ready for the official Console setup, but the live event exchange, live room IDs, and live participant identities remain unverified until that setup is performed. No credentials, deployment, or mainnet action is part of this repository.
+Live Switch Console / Mattermost traffic is not verified in this environment. Docker is unavailable in the current WSL distro, and no Switch credentials were supplied. The live coordinator and durable reconnect/gap recovery path are implemented and tested against adversarial protocol fixtures, but the live event exchange, live room IDs, live participant identities, and human approval remain unverified until the authenticated Console setup is performed. No credentials, deployment, or mainnet action is part of this repository.
 
 Official references used for the implementation:
 

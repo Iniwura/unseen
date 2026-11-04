@@ -43,3 +43,77 @@ test('Switch client uses bearer HTTP and current WebSocket resume protocol', asy
   assert.equal(requests.at(-1).options.headers.authorization, 'Bearer secret');
   assert.equal(requests.at(-1).options.headers['x-switch-connection-id'], connection.connectionId);
 });
+
+class ReconnectingSocket extends EventEmitter {
+  static instances = [];
+  static onOpen = null;
+  constructor(url, options) {
+    super();
+    this.url = url;
+    this.options = options;
+    this.sent = [];
+    this.index = ReconnectingSocket.instances.push(this) - 1;
+    queueMicrotask(() => {
+      this.emit('open');
+      ReconnectingSocket.onOpen?.(this, this.index);
+    });
+  }
+  send(value) { this.sent.push(JSON.parse(value)); }
+  close() { if (!this.closed) { this.closed = true; this.emit('close', 1000, 'closed'); } }
+}
+
+test('resilient Switch connection reuses the persisted cursor after disconnect', async () => {
+  ReconnectingSocket.instances = [];
+  const store = createMemoryStore({ connectionId: 'resume-me', cursor: 4, generation: 2, rooms: ['room-a'] });
+  const controller = new AbortController();
+  ReconnectingSocket.onOpen = (socket, index) => {
+    if (index === 0) {
+      socket.emit('message', JSON.stringify({ event: 'message', id: 5, data: { room_id: 'room-a', payload: {} } }));
+      queueMicrotask(() => socket.emit('close', 1006, 'network drop'));
+    } else {
+      setTimeout(() => controller.abort(), 10);
+    }
+  };
+  const client = new SwitchClient({ bridgeUrl: 'http://switch.local/bridge', agentId: 'agent-1', apiKey: 'secret', WebSocketImpl: ReconnectingSocket, connectionStore: store });
+  await client.runResilient({ maxReconnects: 2, initialDelayMs: 0, signal: controller.signal });
+  assert.equal(ReconnectingSocket.instances.length, 2);
+  const resumed = new URL(ReconnectingSocket.instances[1].url);
+  assert.equal(resumed.searchParams.get('connection_id'), 'resume-me');
+  assert.equal(resumed.searchParams.get('start_from'), '5');
+  assert.equal(resumed.searchParams.get('expected_generation'), '2');
+  ReconnectingSocket.onOpen = null;
+});
+
+test('resilient Switch connection stops after a taken-over eviction', async () => {
+  ReconnectingSocket.instances = [];
+  ReconnectingSocket.onOpen = (socket) => {
+    socket.emit('message', JSON.stringify({ event: 'evicted', data: { code: 'taken_over' } }));
+    queueMicrotask(() => socket.emit('close', 4001, 'taken over'));
+  };
+  const client = new SwitchClient({ bridgeUrl: 'http://switch.local/bridge', agentId: 'agent-1', apiKey: 'secret', WebSocketImpl: ReconnectingSocket, connectionStore: createMemoryStore() });
+  const connection = await client.runResilient({ maxReconnects: 3, initialDelayMs: 0 });
+  assert.equal(connection.evictionCode, 'taken_over');
+  assert.equal(ReconnectingSocket.instances.length, 1);
+  ReconnectingSocket.onOpen = null;
+});
+
+test('connection frame handling is serialized before a reconnect is allowed', async () => {
+  class OrderedSocket extends EventEmitter {
+    constructor() {
+      super();
+      queueMicrotask(() => {
+        this.emit('open');
+        this.emit('message', JSON.stringify({ event: 'message', id: 1, data: {} }));
+        this.emit('message', JSON.stringify({ event: 'message', id: 2, data: {} }));
+        this.emit('close', 1006, 'network drop');
+      });
+    }
+    send() {}
+    close() {}
+  }
+  const order = [];
+  const client = new SwitchClient({ bridgeUrl: 'http://switch.local', agentId: 'agent-1', apiKey: 'secret', WebSocketImpl: OrderedSocket });
+  const connection = await client.connect({ onFrame: async (frame) => { order.push(`start-${frame.id}`); await new Promise((resolve) => setTimeout(resolve, frame.id === 1 ? 5 : 0)); order.push(`end-${frame.id}`); } });
+  await connection.closedPromise;
+  assert.deepEqual(order, ['start-1', 'end-1', 'start-2', 'end-2']);
+});

@@ -17,23 +17,36 @@
 npm ci
 npm test
 npm run demo
+npm run replay
 ```
 
 The local run is useful for judging the actual policy and runner behavior. Its Switch frames are a protocol harness and must be labelled that way.
 
+To clear only durable local state before replaying the bridge, run `npm run reset:local`. For host setup, copy `.env.example` to `.env.local` and run `npm run diagnose:switch`; the diagnostic reports presence and reachability only, never secret values.
+
 ## Live recording checklist
 
-- [ ] Switch Console is signed in and the local server is running.
+- [ ] Switch Console is signed in, the local server is running, and `npm run diagnose:switch` reports the authenticated bridge reachable.
 - [ ] Bundled Mattermost is linked and `release-room` / `support-room` are visible.
 - [ ] The agent API key is in a local secret store, not the terminal recording.
 - [ ] Real room IDs and opaque participant IDs are configured in the adapter.
-- [ ] A real `@` mention receives a reply before recording the workflow.
+- [ ] A real `@` mention receives a visible UNSEEN reply before recording the workflow.
 - [ ] The camera shows the Switch room and UNSEEN board, not credentials.
-- [ ] The failure output includes the exact commit SHA and test exit code.
-- [ ] The repaired commit is visibly different and independently retested.
+- [ ] Human release owner requests checkout commit `A` in `release-room`.
+- [ ] UNSEEN visibly requests missing engineering/support evidence; the investigator retrieves support evidence through Switch.
+- [ ] The real allowlisted regression fails with exit code `1` against exact commit `A`, and the release gate blocks.
+- [ ] The coding agent reports repaired exact commit `B`; UNSEEN supersedes `A` and reruns both independent checks on `B`.
 - [ ] The approval message includes the nonce-bound challenge fields, without showing any secret key.
-- [ ] The final receipt and counterfactual are visible.
+- [ ] The human approves exact commit `B` in `release-room`; the final receipt contains the same SHA and evidence digest.
+- [ ] Disconnect/reconnect or a controlled cursor gap is shown as recovery, with no automatic approval or release during the gap.
+- [ ] The final receipt, audit trail, and counterfactual are visible.
 - [ ] The README links the official Switch docs and clearly distinguishes live evidence from the local harness.
+
+## Evidence labels
+
+- `live-switch`: an event observed from the bearer-authenticated Switch WebSocket and a real room/participant mapping.
+- `simulated-or-unverified`: local protocol fixtures, unit tests, and `npm run demo`.
+- Never use a local receipt, fixture ID, or test output as evidence that Switch collaboration happened.
 
 ## Submission claims to keep precise
 
