@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { createGate } from '../src/gate.mjs';
 import { LiveOrchestrator } from '../src/live-orchestrator.mjs';
 import { createAllowlistedRunner } from '../src/runner.mjs';
@@ -11,6 +13,7 @@ loadLocalEnv();
 const env = process.env;
 const localSwitch = discoverLocalSwitch();
 if (!env.SWITCH_BRIDGE_URL && localSwitch?.bridgeUrl) env.SWITCH_BRIDGE_URL = localSwitch.bridgeUrl;
+if (!env.UNSEEN_CHECKOUT_ROOT && existsSync(resolve('.git'))) env.UNSEEN_CHECKOUT_ROOT = resolve('.');
 const required = [
   'SWITCH_BRIDGE_URL', 'SWITCH_AGENT_ID', 'SWITCH_AGENT_API_KEY',
   'SWITCH_RELEASE_ROOM_ID', 'SWITCH_SUPPORT_ROOM_ID',

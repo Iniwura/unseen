@@ -32,13 +32,15 @@ async function bridgeDiagnostic(url) {
 }
 
 const checkoutRoot = env.UNSEEN_CHECKOUT_ROOT ? resolve(env.UNSEEN_CHECKOUT_ROOT) : null;
-const checkout = checkoutRoot && existsSync(checkoutRoot)
-  ? { configured: true, exists: true, directory: statSync(checkoutRoot).isDirectory() }
-  : { configured: Boolean(checkoutRoot), exists: false, directory: false };
+const automaticCheckoutRoot = !checkoutRoot && existsSync(resolve('.git')) ? resolve('.') : null;
+const effectiveCheckoutRoot = checkoutRoot ?? automaticCheckoutRoot;
+const checkout = effectiveCheckoutRoot && existsSync(effectiveCheckoutRoot)
+  ? { configured: Boolean(checkoutRoot), source: checkoutRoot ? 'environment' : 'current-repository', exists: true, directory: statSync(effectiveCheckoutRoot).isDirectory() }
+  : { configured: Boolean(checkoutRoot), source: checkoutRoot ? 'environment' : 'not-found', exists: false, directory: false };
 const docker = commandDiagnostic(process.platform === 'win32' ? 'docker.exe' : 'docker', ['info', '--format', '{{.ServerVersion}}']);
 const bridgeUrl = env.SWITCH_BRIDGE_URL ?? localSwitch?.bridgeUrl ?? null;
 const bridge = await bridgeDiagnostic(bridgeUrl);
-const configuration = Object.fromEntries(required.map((name) => [name, Boolean(env[name])]));
+const configuration = Object.fromEntries(required.map((name) => [name, Boolean(env[name] || (name === 'UNSEEN_CHECKOUT_ROOT' && automaticCheckoutRoot))]));
 const missing = required.filter((name) => !configuration[name]);
 const nextAction = [];
 if (missing.length > 0) nextAction.push(`Set the missing live variables: ${missing.join(', ')}`);

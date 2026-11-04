@@ -13,6 +13,13 @@ function candidateUserRoots(root = windowsUsersRoot) {
   }
 }
 
+function candidateLocalServerRoots({ usersRoot = windowsUsersRoot, appData = process.env.APPDATA } = {}) {
+  const roots = [];
+  if (typeof appData === 'string' && appData.length > 0) roots.push(join(appData, 'switchdash', 'local-switch-server'));
+  for (const userRoot of candidateUserRoots(usersRoot)) roots.push(join(userRoot, 'AppData', 'Roaming', 'switchdash', 'local-switch-server'));
+  return [...new Set(roots)];
+}
+
 function parseEnvFile(filePath) {
   if (!existsSync(filePath)) return {};
   const values = {};
@@ -27,9 +34,8 @@ function parseEnvFile(filePath) {
 }
 
 /** Discover Switch Console's local Core metadata without reading credentials. */
-export function discoverLocalSwitch({ usersRoot = windowsUsersRoot } = {}) {
-  for (const userRoot of candidateUserRoots(usersRoot)) {
-    const base = join(userRoot, 'AppData', 'Roaming', 'switchdash', 'local-switch-server');
+export function discoverLocalSwitch(options = {}) {
+  for (const base of candidateLocalServerRoots(options)) {
     const portsPath = join(base, 'ports.json');
     try {
       const ports = JSON.parse(readFileSync(portsPath, 'utf8'));

@@ -16,12 +16,28 @@ test('local Switch discovery uses recorded ports and keeps bootstrap values in-p
   chmodSync(envPath, 0o600);
 
   try {
-    const discovered = discoverLocalSwitch({ usersRoot: root });
+    const options = { usersRoot: root, appData: join(root, 'missing-appdata') };
+    const discovered = discoverLocalSwitch(options);
     assert.equal(discovered.bridgeUrl, 'http://127.0.0.1:64821');
     assert.equal(discovered.mattermostPort, 64822);
-    assert.equal(readLocalSwitchEnv('AGENT_REGISTRATION_TOKEN', { usersRoot: root }), 'do-not-print');
-    assert.equal(readLocalSwitchEnv('MISSING_VALUE', { usersRoot: root }), null);
+    assert.equal(readLocalSwitchEnv('AGENT_REGISTRATION_TOKEN', options), 'do-not-print');
+    assert.equal(readLocalSwitchEnv('MISSING_VALUE', options), null);
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('local Switch discovery also supports native Windows APPDATA layout', () => {
+  const appData = join(tmpdir(), `unseen-appdata-${process.pid}-${Date.now()}`);
+  const base = join(appData, 'switchdash', 'local-switch-server');
+  mkdirSync(base, { recursive: true });
+  writeFileSync(join(base, 'ports.json'), JSON.stringify({ api: 64821, mattermost: 64822 }));
+
+  try {
+    const discovered = discoverLocalSwitch({ usersRoot: join(appData, 'no-wsl-users'), appData });
+    assert.equal(discovered.bridgeUrl, 'http://127.0.0.1:64821');
+    assert.equal(discovered.portsPath, join(base, 'ports.json'));
+  } finally {
+    rmSync(appData, { recursive: true, force: true });
   }
 });
