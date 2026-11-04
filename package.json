@@ -1,0 +1,8 @@
+{
+  "name": "unseen-phase1",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {"node": ">=20"},
+  "scripts": {"test": "node --test", "demo": "node demo/blocked.mjs"}
+}
