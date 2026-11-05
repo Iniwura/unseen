@@ -18,8 +18,10 @@ const stateClass = (state) => state === 'VERIFIED_PASS' ? 'pass' : state === 'VE
 function render(data) {
   const decisions = data.decisions ?? [];
   const switchStatus = data.metadata?.switch ?? 'not connected';
-  const connected = switchStatus === 'connected' && data.metadata?.switchEvidence === 'live-switch';
-  const switchLabel = connected ? 'Switch live' : switchStatus === 'reconnecting' || switchStatus === 'connect-error' ? 'Switch reconnecting' : switchStatus === 'gap' ? 'Switch recovering' : 'Switch not connected';
+  const localHarness = data.metadata?.boardSource === 'local-protocol-harness';
+  document.querySelector('#demo-note').hidden = !localHarness;
+  const connected = !localHarness && switchStatus === 'connected' && data.metadata?.switchEvidence === 'live-switch';
+  const switchLabel = localHarness ? 'Local harness' : connected ? 'Switch live' : switchStatus === 'reconnecting' || switchStatus === 'connect-error' ? 'Switch reconnecting' : switchStatus === 'gap' ? 'Switch recovering' : 'Switch not connected';
   connectionNode.innerHTML = `<span class="pulse ${connected ? 'live' : ''}"></span><span>${switchLabel}</span>`;
   countNode.textContent = decisions.length === 0 ? 'No release recorded' : `${decisions.length} release decision${decisions.length === 1 ? '' : 's'}`;
   emptyNode.hidden = decisions.length !== 0;

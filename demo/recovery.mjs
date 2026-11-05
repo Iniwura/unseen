@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { createGate, sha256 } from '../src/gate.mjs';
 import { createAllowlistedRunner } from '../src/runner.mjs';
 import { SwitchEventIngestor, unseenMessage } from '../src/switch-ingest.mjs';
-import { createMemoryStore } from '../src/store.mjs';
+import { createJsonStore, createMemoryStore } from '../src/store.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'unseen-recovery-'));
 const write = (file, contents) => { mkdirSync(join(root, file, '..'), { recursive: true }); writeFileSync(join(root, file), contents); };
@@ -31,7 +31,12 @@ try {
   const initialSha = commit('checkout: candidate release');
   log('candidate exact commit', initialSha);
 
-  const gate = createGate({ runnerSecret: 'demo-runner-secret-that-is-long-enough', authorizedHumans: ['@release-owner:local'] });
+  const demoStatePath = process.env.UNSEEN_DEMO_STATE_PATH;
+  const gate = createGate({
+    runnerSecret: 'demo-runner-secret-that-is-long-enough',
+    authorizedHumans: ['@release-owner:local'],
+    store: demoStatePath ? createJsonStore(demoStatePath) : createMemoryStore()
+  });
   const decision = gate.begin(initialSha, 'DEMO-RECOVERY-1');
   const runner = createAllowlistedRunner({
     checkoutRoot: root,

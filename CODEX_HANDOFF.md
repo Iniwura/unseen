@@ -1,54 +1,52 @@
-# UNSEEN — Codex execution handoff
+# UNSEEN — Current handoff
 
-We're inside the Flip the Switch hackathon window (Nov 4–7, 2026). The owner has locked the UNSEEN Blind-Spot Recovery workflow for **Best Business Workflow**.
+**Updated November 5, 2026.** Target: Flip the Switch, **Best Business Workflow ($2,000)**. Official deadline: **November 7, 2026 at 11:59 PM IST**.
 
-## Implementation checkpoint — 2026-11-04
+## Actual verified state
 
-The repository now contains the durable fail-closed gate, the current Switch WebSocket/HTTP client, authenticated frame ingestor, live event orchestrator, atomic JSON state store, allowlisted real process runner, nonce-bound Switch human approval, one-use execution receipt, live-status board, cursor/gap recovery, adversarial integration tests, and `npm run demo` actual-code recovery workflow. The original Phase 1 tests are preserved and pass alongside the new security and integration tests.
+UNSEEN is a Switch-connected, evidence-bound release gate for a fictional checkout/refund workflow. It gathers facts from distinct engineering and support agents in room-scoped Switch conversations, independently verifies the exact Git commit, blocks failures, accepts a human-requested repair review, and requires an authenticated human approval before issuing a read-only **release-preview** audit receipt.
 
-Live Switch Console / Docker / Mattermost verification is still outstanding. This environment has no Docker executable in WSL and no Switch credentials. The local demo and Switch adapter tests are explicitly labelled as a protocol harness; they are not evidence of live Switch traffic.
+The actual Switch/Mattermost run completed on **November 5**:
 
-## Goal
+- Original unsafe Git SHA: `a921b8a5d51c0a8a58fcdcd59c0963ac012d8627`; baseline PASS but independent successive-refund regression FAIL; **BLOCKED**.
+- Repaired direct-child Git SHA: `f1f440a8f8a1f71052e27d6bad4c8c5acbd9e078`; exact parent and changed files verified, both test commands PASS; original **SUPERSEDED**.
+- Fresh agent evidence from the engineering and support rooms; Gatekeeper verified current digest and released a one-time challenge.
+- Actual linked human approved the fresh challenge in Switch; Gatekeeper posted **UNSEEN AUTHORIZED**.
+- Final actual audit receipt: `c79574fe-1be5-427f-8788-36f8a9b9620d`. This authorizes a **release preview** only; no production deployment or payment happened.
 
-Implement a genuine Switch-powered human/AI release-readiness workflow. The Node.js gate in `src/gate.mjs` is now durable and fail-closed, and `src/switch-client.mjs` / `src/switch-ingest.mjs` implement the current authenticated adapter boundary. Live Switch traffic still needs host setup and must never be conflated with the local protocol harness in `demo/recovery.mjs`.
+Read [live completion evidence](docs/LIVE_COMPLETION_RECEIPT_2026-11-05.md) and [recording guide](docs/SUBMISSION_DEMO_GUIDE.md). Local `localhost` Switch message links are not judge-accessible.
 
-## Run the starting checks
+Prior CI milestone: **91 Node tests passed on Linux and Windows** before the editorial dashboard. The latest branch has more tests and must be judged by its actual Actions results.
 
-```bash
-node --version
-npm test
-npm run demo
-npm run diagnose:switch
-```
+## Visual state and reproduction
 
-## Required order of implementation
+The editorial evidence dashboard uses typography and restrained layout inspired by VERRIS, with original UNSEEN interaction and real gate state. It is read-only and does not authorize a release.
 
-1. Verify the current official Switch docs: https://docs.switchagents.ai/switch-rooms/getting-started and https://docs.switchagents.ai/switch-rooms/internals/agent-protocol. The protocol currently describes agent WebSocket events and HTTP operations; don't copy outdated marketing-page SSE claims.
-2. Verify Windows host has Docker Desktop running, Switch Console installed and Codex authenticated. Use official Switch Console on the host and bundled Mattermost; do not require a VPS. The repository now provides `npm run diagnose:switch` and one ignored `.env.local` file for the non-GUI portion.
-3. Use Console to create a real human + Codex agent `release-room` and prove a reply to an actual mention. Add a `support-room` and permitted Evidence Investigator and Coding agents.
-4. Establish actual event-origin and room-membership validation. The `discover` method accepts untrusted caller parameters and is NOT a security boundary; only call it after trusted Switch event ingestion with dedupe, sender and room mapping.
-5. Replace `recordInternalVerification`'s caller-supplied exit code with an **allowlisted real process runner**. Bind output hashes, actual candidate Git commit hash, policy version, and source reference. Prevent arbitrary shell command input and avoid running untrusted code on the host without isolation.
-6. Build a small fictional checkout/refund repo with a successive-partial-refund bug, passing baseline tests and a separately supplied support regression. Recovery must happen through an authorized agent in `support-room`, not by reading a prebundled script in the dashboard.
-7. Implement approval ONLY after verifying a real Switch event's human identity, nonce, decision ID, exact commit SHA and evidence digest. Never accept an LLM's natural-language approval, a claimed display name, or a fake event. Use restricted single-use execution capability and idempotent local preview receipt.
-8. UI is a restrained read-only board: evidence graph, missing/blocked/ready state, verified action timeline, proof/replay. Switch remains central, not a decorative chat screenshot.
-9. Make the demo reproducible with one reset command, automated tests for forged/replayed/stale evidence, and clear README showing real screenshots and command outputs. No made-up logs or claims. Do not submit the entry automatically; the participant must submit themselves.
+**Real operator state:** `npm start` reads ignored `.unseen/state.json` on the original computer. Without this local store it correctly shows an empty state. Connection status must reflect actual Switch status, not a screenshot claim.
 
-## Critical constraints
+**Reproducible local protocol harness:** `npm ci && npm run demo:board` runs the real local Git/test regression and repair, saves the computed decisions to a **separate ignored harness store**, and opens the read-only dashboard at `http://127.0.0.1:4173`. The UI is visibly labeled **LOCAL PROTOCOL HARNESS**. This is not live Switch traffic and cannot replace live footage.
 
-- Preserve **fail closed** semantics. Never weaken the gate to get a green screenshot.
-- Treat every claim of a passed external system as unverified until run locally and evidenced.
-- Tests must not conflate simulation, pure-model checks, and live integration.
-- No secret tokens or keys in a public repo.
-- Follow the organizer's current requirements and submission deadline: Nov 7, 2026, 11:59 PM IST.
+**Plain CLI regression:** `npm run demo` exercises the existing in-memory protocol harness and prints verified runner output without populating the main live store.
 
-## User design preference
+## Remaining submission tasks
 
-Aim for Linear / Apple Notes simplicity. Clear purpose, architecture and interface. Remove unnecessary taglines and secondary labels. The read-only board is shipped, but do not present its local harness state as live Switch evidence.
+1. Confirm CI on the final proposed commit; merge only passing PRs.
+2. Capture the real Switch Console's blocked → repair → approval conversation, with a real participant and distinct agents visible. Show only a dashboard sourced from that same session, or keep the LOCAL PROTOCOL HARNESS disclosure visible.
+3. Produce the final 75–100 second public screen recording. A private first-cut video is not public proof.
+4. Update the README with the public recording URL, check repo accessibility, and complete the **official submission manually** before the deadline. The rules prohibit automated entry.
 
-## Remaining before submission
+## Invariants: do not regress
 
-1. Install Docker Desktop and the official Switch Console on Windows; sign in to Codex.
-2. Create `release-room` and `support-room` in bundled Mattermost, register the UNSEEN agent once, and capture the real room and participant IDs.
-3. Run `npm run diagnose:switch`, then the adapter against the authenticated Switch bridge and record a real human mention, investigator handoff, blocked regression, repaired exact SHA, and human approval. Keep all credentials out of the repo and recording.
-4. Capture the live demo, screenshots, and command output. Label the local harness and live run separately in the submission.
-5. If the release action will run untrusted candidate code outside a container, add a container or equivalent sandbox before production use; the current runner is allowlisted but intentionally reports this host-execution boundary.
+- Never accept browser-originating approval or trust a claimed display name as human identity.
+- Require exact SHA, fresh evidence digest, sender/room binding, and one-time nonce before authorization.
+- Fixed allowlisted test commands only; never treat an agent's test-success assertion as independent verification.
+- Preserve denied, blocked, and superseded records; never reset operator state just for a recording.
+- Do not claim the locally generated protocol harness is live Switch traffic, or that the preview receipt is production deployment.
+- Keep all `.env.local`, credentials, runner secrets, and raw local operational stores outside the public repo.
+- The coding-agent slot was not bound in the completed live run. The repair came from the identified engineering agent.
+
+## Design principle
+
+Simple purpose. Simple architecture. Simple design. Simple implementation. Evidence and decision should be visible without unnecessary taglines or explanatory layers.
+
+The repo is https://github.com/Iniwura/unseen. The official hackathon criteria are 30% Switch use, 25% technical execution, 25% creativity/impact, and 20% demo/README.
