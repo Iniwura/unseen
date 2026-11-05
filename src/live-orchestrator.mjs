@@ -70,7 +70,7 @@ export class LiveOrchestrator {
     // user/agent. This check precedes the ingestor's gate mutation.
     if (this.blockedOnly && frame?.event === 'message') {
       const kind = parseUnseenMessage(frame.data?.payload?.body)?.kind;
-      if (['approval','remediation','remediation_ready'].includes(kind)) {
+      if (['approval','approval_refresh_request','remediation','remediation_ready'].includes(kind)) {
         return { ignored: true, blockedOnly: true, command: kind };
       }
     }
@@ -81,6 +81,9 @@ export class LiveOrchestrator {
     }
     if (result?.accepted && result.type === 'evidence') return this.handleEvidence(result);
     if (result?.accepted && result.type === 'remediation') return this.handleRemediation(result);
+    if (result?.accepted && result.type === 'approval_refresh_request') {
+      return this.refreshApprovalChallenge(result.command);
+    }
     if (result?.accepted && result.type === 'approval') return this.handleApproval(result);
     return result;
   }
@@ -249,13 +252,32 @@ export class LiveOrchestrator {
     return repaired;
   }
 
-  async issueApprovalChallenge(decision) {
-    if (this.state.approvalChallengeFor === decision.id) return;
-    const challenge = this.gate.issueApprovalChallenge(decision.id);
-    this.state.approvalChallengeFor = decision.id;
+  async issueApprovalChallenge(decision, { force = false } = {}) {
+    const current = this.gate.describe(decision.id);
+    assert(current.status === 'READY_FOR_APPROVAL' && current.id === this.state.activeDecisionId,
+      'APPROVAL_NOT_READY', 'Both requirements must pass on the current active release');
+    // New trusted evidence can alter the canonical evidence digest even when
+    // the decision ID stays the same. Never keep a previously issued, now
+    // stale nonce simply because it was for the same decision.
+    if (!force && this.state.approvalChallengeFor === current.id &&
+        this.state.approvalChallengeEvidenceDigest === current.evidenceDigest) return null;
+    const challenge = this.gate.issueApprovalChallenge(current.id);
+    this.state.approvalChallengeFor = current.id;
+    this.state.approvalChallengeEvidenceDigest = challenge.evidenceDigest;
     this.persist();
-    await this.post('release-room', `${this.mention('release-owner')}Both requirements pass. Approve only this exact artifact by replying with:\n${unseenMessage({ kind: 'approval', decisionId: challenge.decisionId, sha: challenge.sha, evidenceDigest: challenge.evidenceDigest, nonce: challenge.nonce })}`);
+    await this.post('release-room', `${this.mention('release-owner')}Both requirements pass. Use only this LATEST approval challenge for the verified artifact. Prior challenge messages are invalid:\n${unseenMessage({ kind: 'approval', decisionId: challenge.decisionId, sha: challenge.sha, evidenceDigest: challenge.evidenceDigest, nonce: challenge.nonce })}`);
     return challenge;
+  }
+
+  async refreshApprovalChallenge(command) {
+    assert(this.recoveryReview && !this.blockedOnly,
+      'APPROVAL_REFRESH_NOT_AVAILABLE', 'Challenge refresh is not enabled in this live recovery workflow');
+    const decision = this.active();
+    assert(decision && decision.id === command?.decisionId && decision.sha === command?.sha,
+      'STALE_APPROVAL_REFRESH', 'Challenge refresh must match the current exact decision and commit');
+    assert(decision.status === 'READY_FOR_APPROVAL' && !decision.approved && !decision.executed,
+      'APPROVAL_NOT_READY', 'The release is not currently ready for human approval');
+    return this.issueApprovalChallenge(decision, { force: true });
   }
 
   async handleApproval(result) {
