@@ -61,7 +61,11 @@ async function main() {
     console.log(JSON.stringify(report, null, 2));
     return;
   }
-  if (identity.verified !== false) return fail('UNEXPECTED_VERIFICATION_STATE');
+  // Switch Core versions can omit or null out this optional status on a linked
+  // identity. Only an explicit true means confirmed. The official code-issuance
+  // endpoint makes the authoritative decision for all other cases and refuses
+  // already-verified or unowned links.
+  report.verificationStatus = identity.verified === false ? 'unverified' : 'not-confirmed-in-response';
 
   step = 'issue-official-confirmation-code';
   const response = (await api(
