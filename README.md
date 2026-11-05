@@ -53,6 +53,12 @@ The board is available at `http://127.0.0.1:4173`. It is intentionally read-only
 
 `npm run replay` repeats the local protocol-harness recovery. `npm run reset:local` removes only the repository-local `.unseen/` state directory. `npm run diagnose:switch` discovers the Switch Console's native local-server ports, checks configuration presence, the checkout path, runtime availability, and unauthenticated bridge health without printing secret values. After the local server is running, `npm run register:switch` uses the local bootstrap registration token in-process, saves only the returned Gatekeeper credentials to ignored owner-only `.env.local`, and `npm run discover:switch` uses authenticated `list_rooms`/`list_participants` operations to resolve exact room IDs. It never guesses IDs or prints credentials.
 
+## Inspect a paused live release without resetting it
+
+If `authorize:routing` returns a retry error, it now prints a **safe local recovery diagnosis**: bridge connection state, room subscription count, exact decision match and engineering/support evidence states. It does not print credentials, runner secrets, source documents or full state files. An error such as `LIVE_BRIDGE_NOT_CONNECTED`, `LIVE_ROOMS_NOT_CONFIRMED`, `ACTIVE_DECISION_MISMATCH`, or `ENGINEERING_ALREADY_VERIFIED` identifies the next step without guessing or resetting the candidate.
+
+The default authorization command is still idempotent. It only re-sends an engineering request when the existing live decision is authenticated, still active, exactly SHA-bound, missing engineering evidence, and subscribed to both intended rooms. **Do not repost the original release request or delete any state files to resolve a retry error.**
+
 ## Fix Gatekeeper-to-agent routing without opening permissions
 
 If the live engineering agent replies to Gatekeeper's request with **"You're not permitted to direct messages to me in this room"**, the *recipient engineer's* addressing policy is rejecting **Gatekeeper's** outgoing message. Authorizing engineers to message Gatekeeper does not authorize Gatekeeper to message the engineers.
