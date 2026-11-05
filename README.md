@@ -19,6 +19,18 @@ Implemented and locally verified:
 
 The local demo uses a clearly labelled protocol harness because this environment has no Switch Console, Docker, or authenticated Switch server. It does not claim those local frames are live Switch traffic.
 
+## Verified live Switch milestone (November 5, 2026)
+
+The **first fail-closed release decision has now run against the operator's actual Switch Core 0.31.0 / Mattermost server**. The human sent an addressed `release_request` from their linked `user` account in `release-room`. UNSEEN authenticated the event, recorded the exact candidate Git SHA, persisted the `PENDING_EVIDENCE` decision, and posted the blocked/missing-evidence result back into the real room.
+
+- **Outcome:** `live-fail-closed-verified`; authenticated connection to both rooms, Switch reply confirmed posted.
+- **Observed Switch event:** sequence `9007194959773699`.
+- **Observed decision:** `switch-live-c4f2d8e7-6686-42a8-a620-61074dbcb53b`.
+- **Proof and exact transcript:** [November 5 live Switch proof](docs/LIVE_SWITCH_PROOF_2026-11-05.md).
+- **Repeat:** `npm.cmd run smoke:release` using an existing local server and exact verified sender binding. The command prints the fresh message to post; it never approves a release or deploys.
+
+**Proof boundary:** This is a real Switch-connected **entry-point and missing-evidence gate test**, not an end-to-end live remediation/approval recording. The complete blocked-refund, repaired-commit and approval sequence is implemented and locally tested, but must still be exercised through actual Switch agents and rooms before being claimed live. The `ini-unseen-engineer` agent exists, but its authenticated event sender has not yet been bound to the live orchestrator.
+
 ## Run it
 
 Requires Node.js 20+.
