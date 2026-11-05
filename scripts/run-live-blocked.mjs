@@ -85,6 +85,7 @@ async function run() {
   env.SWITCH_RELEASE_OWNER_ID = owner;
   env.UNSEEN_AUTHORIZED_HUMANS = owner;
   env.UNSEEN_CHECKOUT_ROOT = candidate;
+  env.UNSEEN_BLOCKED_ONLY = '1';
   env.SWITCH_ENGINEERING_MENTION = '@ini-unseen-engineer';
   env.SWITCH_INVESTIGATOR_MENTION = '@switch-buddy-admin';
   // The coding agent remains deliberately unauthorized for the blocked phase.
