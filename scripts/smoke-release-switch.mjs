@@ -28,7 +28,7 @@ const reportAndExit = (status) => {
   console.log(JSON.stringify(report, null, 2));
   process.exitCode = status;
 };
-if (!endpoint || !agentId || !apiKey || !senderId || !/^@[^\\s]+:[^\\s]+$/.test(senderId)) {
+if (!endpoint || !agentId || !apiKey || !senderId || !(senderId.startsWith('@') && senderId.includes(':') && !senderId.includes(' ') && senderId.length < 512)) {
   report.error = 'Missing Gatekeeper credentials or exact, verified opaque SWITCH_RELEASE_OWNER_ID; never guess it from a display name.';
   reportAndExit(2);
 } else {
