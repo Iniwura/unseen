@@ -123,7 +123,9 @@ export class SwitchClient {
   postMessage(roomId, content) { return this.request(`/agents/${encodeURIComponent(this.agentId)}/message`, { method: 'POST', body: { room_id: roomId, content } }); }
   listRooms() { return this.operation('list_rooms'); }
   getRoomDetail(roomId, options) { return this.operation('get_room_detail', { room_id: roomId }, options); }
-  listParticipants(roomId, options) { return this.operation('list_participants', { room_id: roomId }, options); }
+  // The list_participants operation accepts no room_id: it only reads the currently connected room.
+  // This authenticated read-only endpoint accepts an explicit room and verifies membership.
+  listParticipants(roomId) { return this.request(`/agents/rooms/${encodeURIComponent(roomId)}/participants`); }
   readContext(roomId, options) { return this.operation('read_context', { room_id: roomId }, options); }
   sendTargetedMessage(roomId, recipientId, content, options) { return this.operation('send_targeted_message', { room_id: roomId, recipient_id: recipientId, content }, options); }
 
