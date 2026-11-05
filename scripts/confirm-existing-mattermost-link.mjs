@@ -1,5 +1,5 @@
 import { discoverLocalSwitch, readLocalSwitchEnv } from '../src/local-switch.mjs';
-import { linkedMattermostAccount } from '../src/switch-link-confirmation.mjs';
+import { linkedMattermostAccount, assertUsableLinkedIdentity } from '../src/switch-link-confirmation.mjs';
 
 // The linked Mattermost account was created before Switch required proof of
 // ownership. Generate an official one-time confirmation challenge only for
@@ -61,11 +61,25 @@ async function main() {
     console.log(JSON.stringify(report, null, 2));
     return;
   }
-  // Switch Core versions can omit or null out this optional status on a linked
-  // identity. Only an explicit true means confirmed. The official code-issuance
-  // endpoint makes the authoritative decision for all other cases and refuses
-  // already-verified or unowned links.
-  report.verificationStatus = identity.verified === false ? 'unverified' : 'not-confirmed-in-response';
+  // Switch Core 0.31.0 has already-claimed identities but no confirmation
+  // endpoint or 'verified' field. The old script incorrectly retried that
+  // nonexistent API and received HTTP 404.
+  step = 'core-version';
+  const declaration = (await api('/gateway/version', { cookie })).body;
+  const version = declaration?.version;
+  report.coreVersion = typeof version === 'string' ? version : 'unknown';
+  if (identity.verified === undefined) {
+    step = 'legacy-link-compatibility';
+    let compatibility;
+    try { compatibility = assertUsableLinkedIdentity(identity, version); }
+    catch { return fail('UNKNOWN_LINK_PROTOCOL'); }
+    report.status = compatibility;
+    console.log(JSON.stringify(report, null, 2));
+    console.log('This Core version already accepts the linked Mattermost account. No confirmation code exists.');
+    console.log('Next: npm.cmd run authorize:switch');
+    return;
+  }
+  if (identity.verified !== false) return fail('UNKNOWN_LINK_PROTOCOL');
 
   step = 'issue-official-confirmation-code';
   const response = (await api(
