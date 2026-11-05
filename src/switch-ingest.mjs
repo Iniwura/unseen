@@ -126,6 +126,22 @@ export class SwitchEventIngestor {
       remember();
       return { accepted: true, type: 'evidence', eventId: eventKey, requirementId: command.requirementId, decision: result };
     }
+    if (command.kind === 'approval_refresh_request') {
+      // A new nonce can only be requested by the exact linked human release
+      // owner from release-room. This cannot approve or execute the release.
+      assert(identity.kind === 'human' && identity.role === 'release-owner',
+        'CHALLENGE_REFRESH_SENDER_DENIED', 'Only the linked release owner may renew an approval challenge');
+      assert(policy.name === 'release-room',
+        'CHALLENGE_REFRESH_ROOM_DENIED', 'Approval challenge renewal is restricted to release-room');
+      assert(typeof command.decisionId === 'string' && command.decisionId.length > 0 &&
+        typeof command.sha === 'string' && /^[a-f0-9]{40}$/.test(command.sha),
+        'BAD_CHALLENGE_REFRESH', 'Renewal requires the exact decision ID and commit SHA');
+      assert(typeof this.onCommand === 'function',
+        'COMMAND_UNAVAILABLE', 'No approval challenge renewal handler is available');
+      const result = this.onCommand({ ...command, sender: payload.sender, room: policy.name, eventId: messageId });
+      remember();
+      return { accepted: true, type: 'approval_refresh_request', eventId: eventKey, result, command };
+    }
     if (command.kind === 'approval') {
       assert(identity.kind === 'human' && identity.role === 'release-owner', 'APPROVAL_SENDER_DENIED', 'Only the configured human release owner can approve');
       assert(policy.name === 'release-room', 'APPROVAL_ROOM_DENIED', 'Approval must originate in release-room');
