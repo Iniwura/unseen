@@ -4,6 +4,22 @@ UNSEEN is an evidence-driven release gate for a human and AI agents working toge
 
 The signature flow is a checkout release that looks safe, an overlooked support requirement recovered in `support-room`, a real refund regression that blocks the candidate, an independently tested repair, and a human approval bound to the repaired commit and evidence digest.
 
+## Completed live Switch result · November 5, 2026
+
+**Actual local Switch workflow completed and human-authorized.** This is not merely the `npm run demo` protocol harness.
+
+- **Unsafe candidate blocked:** `a921b8a5d51c0a8a58fcdcd59c0963ac012d8627`. Its engineering baseline passed but the independent cumulative-refund regression failed. Gatekeeper posted **UNSEEN BLOCKED** in the real `release-room`.
+- **Engineer-authored repair:** `f1f440a8f8a1f71052e27d6bad4c8c5acbd9e078`. Gatekeeper verified the exact Git parent, clean worktree and changed files, reran both real test commands, and preserved the old decision as **SUPERSEDED**.
+- **Fresh evidence:** the real engineering and support agents supplied new messages for repaired decision `repair-67f48203-1b45-4912-87ca-d3a25affd293`. Gatekeeper verified both independently and issued an evidence-bound human approval challenge.
+- **Human approval in Switch:** the linked release owner approved the current exact SHA and evidence digest. Gatekeeper responded **UNSEEN AUTHORIZED** with audit receipt `c79574fe-1be5-427f-8788-36f8a9b9620d`.
+- **Actual action:** `release-preview` receipt, **not a production deployment**, fund movement or payment.
+
+**Judge-facing evidence:** [Complete live receipt record](docs/LIVE_COMPLETION_RECEIPT_2026-11-05.md) · [Original real blocked release](docs/LIVE_BLOCKED_RELEASE_2026-11-05.md) · [Demo recording guide](docs/SUBMISSION_DEMO_GUIDE.md).
+
+**Reproduce independently:** `npm install --ignore-scripts && npm test && npm run demo`. The last command is explicitly a **local protocol harness**, not a real Switch session. For the real multi-agent Switch sequence, use the documented Switch Core/Console setup and actual authenticated room participants. Local `localhost` message links are **not public**; a judge-visible video recording of the actual Console is necessary.
+
+**Submission status:** code and live proof documented; a public screen recording and the official hackathon submission are separate next steps, **not yet claimed complete**.
+
 ## What is real here
 
 Implemented and locally verified:
