@@ -2,7 +2,7 @@ import { loadLocalEnv } from '../src/env.mjs';
 import { discoverLocalSwitch, readLocalSwitchEnv } from '../src/local-switch.mjs';
 import { SwitchClient } from '../src/switch-client.mjs';
 import { operationList, findRoomByExactName, roomId } from '../src/switch-discovery.mjs';
-import { buildScopedGatekeeperPolicy } from '../src/switch-admin-policy.mjs';
+import { buildScopedGatekeeperPolicy, sameScopedPolicy } from '../src/switch-admin-policy.mjs';
 import { linkedMattermostAccount, assertUsableLinkedIdentity } from '../src/switch-link-confirmation.mjs';
 
 // Native Windows-only admin operation. No secrets are printed, written, exported,
@@ -131,7 +131,7 @@ async function run() {
     });
     step = 'verify-policy';
     const checked = (await request(`/gateway/agents/${encodeURIComponent(agentId)}`, { cookie })).json;
-    if (JSON.stringify(checked?.addressing_policy?.rules) !== JSON.stringify(plan.policy.rules)) {
+    if (!sameScopedPolicy(checked?.addressing_policy, plan.policy)) {
       return safeError('POST_UPDATE_POLICY_MISMATCH');
     }
     report.change = 'applied-and-verified';
