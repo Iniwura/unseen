@@ -55,23 +55,22 @@ if (!bridgeUrl || !env.SWITCH_AGENT_ID || !env.SWITCH_AGENT_API_KEY) {
       coding: env.SWITCH_CODING_AGENT_NAME,
       releaseOwner: env.SWITCH_RELEASE_OWNER_NAME
     };
-    const resolvedParticipants = {
+    // These are account/roster IDs, NOT authenticated WebSocket payload.sender IDs.
+    // Display them as informational matches only; never use them for gate authorization.
+    const rosterMatches = {
       engineering: exactParticipant(rawParticipants, participantNames.engineering),
       investigator: exactParticipant(rawParticipants, participantNames.investigator),
       coding: exactParticipant(rawParticipants, participantNames.coding),
       releaseOwner: exactParticipant(rawParticipants, participantNames.releaseOwner)
     };
-    const output = { agentId: env.SWITCH_AGENT_ID, bridgeUrl, rooms: redact(rooms), selectedRooms: redact({ release, support }), participants, resolvedParticipants };
+    const output = { agentId: env.SWITCH_AGENT_ID, bridgeUrl, rooms: redact(rooms), selectedRooms: redact({ release, support }), participants, rosterMatches, trustedSenderBindings: 'not-derived-from-room-roster' };
     console.log(JSON.stringify(output, null, 2));
+    console.log('Sender role IDs were not populated: roster UUIDs are not Switch event sender IDs. Bind roles only to independently verified opaque payload.sender identities.');
     const envPath = resolve('.env.local');
     const current = existsSync(envPath) ? readFileSync(envPath, 'utf8') : '';
     const values = {};
     if (roomId(release)) values.SWITCH_RELEASE_ROOM_ID = roomId(release);
     if (roomId(support)) values.SWITCH_SUPPORT_ROOM_ID = roomId(support);
-    if (resolvedParticipants.engineering) values.SWITCH_ENGINEERING_AGENT_ID = resolvedParticipants.engineering;
-    if (resolvedParticipants.investigator) values.SWITCH_INVESTIGATOR_AGENT_ID = resolvedParticipants.investigator;
-    if (resolvedParticipants.coding) values.SWITCH_CODING_AGENT_ID = resolvedParticipants.coding;
-    if (resolvedParticipants.releaseOwner) values.SWITCH_RELEASE_OWNER_ID = resolvedParticipants.releaseOwner;
     const lines = current.split(/\r?\n/).filter((line) => line && !Object.keys(values).some((key) => line.startsWith(`${key}=`)));
     lines.push(...Object.entries(values).map(([key, value]) => `${key}=${value}`));
     if (Object.keys(values).length > 0) {
