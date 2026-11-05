@@ -76,6 +76,20 @@ Only when an exact, still-active, unapproved `PENDING_EVIDENCE` decision matches
 
 **Safety:** The existing `live:blocked` bridge remains in blocked-only mode; the command grants no approval, execution, remediation or coding-agent privileges. Running `--apply` is an explicit, narrowly scoped permission change; running the dry-run alone makes no changes.
 
+## Recover an expired or stale approval challenge without restarting the release
+
+If the live Switch listener prints `[switch] STALE_EVIDENCE` or `INVALID_NONCE` after the operator copied an approval message, the authorization was **refused**. Do **not** repost the same approval or restart the original release. The Gatekeeper will now automatically replace an approval challenge when the canonical engineering/support evidence digest changes for an otherwise `READY_FOR_APPROVAL` decision.
+
+If the previously posted challenge was missed, rejected, or expired, the linked human may send the following **new** addressed command in `release-room`, using the **current** active repaired decision ID and repaired SHA:
+
+```text
+@unseen-gatekeeper UNSEEN/1 {"kind":"approval_refresh_request","decisionId":"<current-repaired-decision-id>","sha":"<exact-repaired-40-hex-sha>"}
+```
+
+Only the real human release-owner sender, in release-room, on the authenticated Switch connection may request a new challenge. It is accepted only when that exact repaired decision is **currently READY_FOR_APPROVAL**, not superseded, approved or executed. The Gatekeeper posts a fresh challenge with a fresh, single-use nonce bound to the latest evidence digest; previous approval messages become invalid. The refresh itself **never approves, executes or deploys**.
+
+The operator then copies the **newest** `UNSEEN/1 {"kind":"approval",...}` message from Gatekeeper into an addressed release-room post, unchanged. If the old challenge has become stale again, refresh again rather than editing the signed evidence digest or nonce by hand. The final action is a local `release-preview` audit receipt, never production deployment.
+
 ## Continue from verified live BLOCKED to repaired release review
 
 The original real Switch decision `live-block-a9eb054a-9564-42bf-aaf1-c3b7ee5a9c8c` is **BLOCKED**, and the engineering agent has now *reported* a repaired child commit `f1f440a8f8a1f71052e27d6bad4c8c5acbd9e078`. Agent claims alone do not authorize a release.
