@@ -15,6 +15,7 @@
     "verify:switch": "node scripts/verify-switch-readonly.mjs",
     "probe:switch": "node scripts/probe-switch-message.mjs",
     "inspect:switch": "node scripts/inspect-switch-message.mjs",
+    "authorize:switch": "node scripts/authorize-switch-gatekeeper.mjs",
     "connect:switch": "node scripts/live-bridge.mjs",
     "start": "node src/server.mjs"
   },
