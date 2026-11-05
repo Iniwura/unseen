@@ -53,6 +53,23 @@ The board is available at `http://127.0.0.1:4173`. It is intentionally read-only
 
 `npm run replay` repeats the local protocol-harness recovery. `npm run reset:local` removes only the repository-local `.unseen/` state directory. `npm run diagnose:switch` discovers the Switch Console's native local-server ports, checks configuration presence, the checkout path, runtime availability, and unauthenticated bridge health without printing secret values. After the local server is running, `npm run register:switch` uses the local bootstrap registration token in-process, saves only the returned Gatekeeper credentials to ignored owner-only `.env.local`, and `npm run discover:switch` uses authenticated `list_rooms`/`list_participants` operations to resolve exact room IDs. It never guesses IDs or prints credentials.
 
+## Fix Gatekeeper-to-agent routing without opening permissions
+
+If the live engineering agent replies to Gatekeeper's request with **"You're not permitted to direct messages to me in this room"**, the *recipient engineer's* addressing policy is rejecting **Gatekeeper's** outgoing message. Authorizing engineers to message Gatekeeper does not authorize Gatekeeper to message the engineers.
+
+Keep `npm.cmd run live:blocked` running. In a **separate PowerShell window**, in this same UNSEEN repository, run:
+
+```powershell
+npm.cmd run authorize:routing
+npm.cmd run authorize:routing -- --apply
+```
+
+The first command is a dry-run. The second explicitly adds **Gatekeeper's registered agent ID only in release-room** to `ini-unseen-engineer`'s policy, and **Gatekeeper only in support-room** to `switch-buddy-admin`'s policy. If a recipient's policy is already open, nothing is changed. Existing owner rules, target ownership, user permissions, room memberships and the Gatekeeper's own policy remain untouched. It authenticates through the existing local Switch 0.31 administrator account; does not print or save credentials; verifies exact agent identities and memberships; re-reads recipient policies before mutation; and checks each saved result.
+
+Only when an exact, still-active, unapproved `PENDING_EVIDENCE` decision matches the durable `live:blocked` request and engineering evidence is still missing does the apply command **re-send the engineering request** from Gatekeeper (without issuing a new release request). This only posts a message. The engineer must independently return a real `UNSEEN/1` evidence event. We do not call the milestone live `BLOCKED` until that event is accepted and the Gatekeeper's own runner reproduces the refund failure from the exact candidate SHA.
+
+**Safety:** The existing `live:blocked` bridge remains in blocked-only mode; the command grants no approval, execution, remediation or coding-agent privileges. Running `--apply` is an explicit, narrowly scoped permission change; running the dry-run alone makes no changes.
+
 ## Show the actual live BLOCKED decision
 
 Once the scoped evidence-agent authorization returns `status: evidence-agents-bound`, use:
