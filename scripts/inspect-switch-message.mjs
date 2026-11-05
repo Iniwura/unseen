@@ -26,7 +26,7 @@ if (!/^UNSEEN-CHECK-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
         report.note = 'Gatekeeper cannot discover release-room.';
         process.exitCode = 2;
       } else {
-        const observation = findChallengeInRoomContext(await client.readContext(id, { limit: 150 }), nonce);
+        const observation = findChallengeInRoomContext(await client.operation('read_context', { room_id: id, limit: 150 }), nonce);
         report.messageInHistory = observation.found;
         report.mentionPresent = observation.mentionPresent;
         report.messagesScanned = observation.messagesScanned;
