@@ -118,7 +118,7 @@ async function run() {
   report.existingPolicy = 'restricted';
   report.currentRules = oldPolicy.rules.length;
   report.proposedRules = plan.policy.rules.length;
-  report.plannedScope = 'verified Mattermost user only, release-room only';
+  report.plannedScope = 'linked Mattermost user only, release-room only';
   if (!plan.changed) {
     report.change = 'already-present';
   } else if (!apply) {
