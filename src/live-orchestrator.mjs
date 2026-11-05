@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { isGitSha } from './gate.mjs';
 import { unseenMessage, parseUnseenMessage } from './switch-ingest.mjs';
 import { createMemoryStore } from './store.mjs';
+import { verifyRepairedCheckout } from './live-repair-validation.mjs';
 
 export class LiveWorkflowError extends Error {
   constructor(code, message) { super(message); this.name = 'LiveWorkflowError'; this.code = code; }
@@ -25,6 +26,7 @@ export class LiveOrchestrator {
     rooms,
     mentions = {},
     blockedOnly = false,
+    recoveryReview = false,
     stateStore = createMemoryStore()
   } = {}) {
     assert(gate && runner && client && ingestor, 'BAD_WORKFLOW', 'Live workflow dependencies are required');
@@ -36,6 +38,7 @@ export class LiveOrchestrator {
     this.rooms = rooms;
     this.mentions = mentions;
     this.blockedOnly = blockedOnly === true;
+    this.recoveryReview = recoveryReview === true;
     this.stateStore = stateStore;
     this.state = { activeDecisionId: null, supportRequestedFor: null, approvalChallengeFor: null, lastError: null, ...(stateStore.load?.() ?? {}) };
   }
@@ -73,6 +76,9 @@ export class LiveOrchestrator {
     }
     const result = this.ingestor.handleFrame(frame, connection);
     if (result?.accepted && result.type === 'release_request') return this.startRelease(result.command, result.eventId);
+    if (result?.accepted && result.type === 'repair_review_request') {
+      return this.startRepairedReview(result.command, result.eventId);
+    }
     if (result?.accepted && result.type === 'evidence') return this.handleEvidence(result);
     if (result?.accepted && result.type === 'remediation') return this.handleRemediation(result);
     if (result?.accepted && result.type === 'approval') return this.handleApproval(result);
@@ -99,6 +105,69 @@ export class LiveOrchestrator {
     await this.post('release-room', `${this.mention('engineering')}Verify the candidate commit and report the baseline evidence with:\n${unseenMessage({ kind: 'evidence', decisionId: decision.id, requirementId: 'engineering', documentDigest: '<sha256-of-authoritative-engineering-evidence>' })}`);
     await this.post('support-room', `${this.mention('investigator')}UNSEEN is waiting for engineering evidence before requesting support acceptance for decision ${decision.id}.`);
     return decision;
+  }
+
+
+  /**
+   * A real, human-requested review of an engineer-authored repair. This
+   * path is distinct from a trusted coding-agent remediation event: the
+   * request is not evidence. Verify Git parent/files and execute both
+   * allowlisted tests *before* changing the blocked release.
+   */
+  async startRepairedReview(command, eventId) {
+    assert(this.recoveryReview && !this.blockedOnly, 'REVIEW_MODE_DENIED',
+      'Repair review is not enabled in this live workflow');
+    const existing = this.active();
+    assert(existing?.id === command?.blockedDecisionId &&
+      existing?.sha === command?.originalSha && existing?.status === 'BLOCKED',
+      'STALE_BLOCKED_DECISION', 'Original decision must still be the exact active blocked release');
+    assert(isGitSha(command?.newSha) && command.newSha !== existing.sha,
+      'BAD_REPAIRED_SHA', 'Repair must name a different exact Git commit');
+    if (!this.runner.root) throw new LiveWorkflowError('RUNNER_CHECKOUT_MISSING','The real checkout is unavailable');
+    let inspected;
+    let baseline;
+    let support;
+    try {
+      inspected = await verifyRepairedCheckout({
+        checkoutRoot:this.runner.root, originalSha:existing.sha, repairedSha:command.newSha
+      });
+      baseline = await this.runner.run({ sha:command.newSha, command:'baseline-tests' });
+      support = await this.runner.run({ sha:command.newSha, command:'refund-regression' });
+      if (baseline.exitCode !== 0 || support.exitCode !== 0) {
+        throw new LiveWorkflowError('REPAIR_REGRESSION_FAILED',
+          'One or more allowlisted tests did not pass against the repaired exact Git SHA');
+      }
+    } catch (error) {
+      const code = error?.code ?? 'REPAIR_VERIFICATION_ERROR';
+      this.state.lastError = {code, decisionId:existing.id, sha:command.newSha};
+      this.persist();
+      await this.post('release-room',
+        `UNSEEN REFUSED repaired commit ${command.newSha}. Independent Git and test verification failed (${code}). Original release ${existing.id} remains BLOCKED. No approval or deployment.`);
+      return this.gate.describe(existing.id);
+    }
+    // Atomic durable supersession of the original BLOCKED decision occurs
+    // ONLY after both independent tests pass on a clean direct child commit.
+    const transition = this.gate.beginSupersedingBlocked(existing.id, inspected.repairedSha);
+    const repaired = transition.repaired;
+    this.state.activeDecisionId = repaired.id;
+    this.state.supportRequestedFor = null;
+    this.state.approvalChallengeFor = null;
+    this.state.pendingVerification = null;
+    this.state.lastError = null;
+    this.persist();
+    await this.post('release-room',
+      `UNSEEN verified the repair ${repaired.sha} against the blocked parent ${existing.sha}. Both independent allowlisted test commands PASS (baseline output ${baseline.outputDigest}, refund output ${support.outputDigest}). Original decision ${existing.id} preserved as SUPERSEDED; new decision ${repaired.id} requires FRESH engineering and support evidence. No approval or deployment.`);
+    await this.post('release-room',
+      `${this.mention('engineering')}Re-check repaired commit ${repaired.sha}. Return a NEW addressed evidence message, citing your new source, for:\n${unseenMessage({
+        kind:'evidence',decisionId:repaired.id,requirementId:'engineering',
+        documentDigest:'<SHA256-OF-FRESH-ENGINEERING-REPORT>'
+      })}`);
+    await this.post('support-room',
+      `${this.mention('investigator')}Re-check owner-authored refund acceptance for repaired commit ${repaired.sha}. Return a NEW addressed evidence message with your source digest for:\n${unseenMessage({
+        kind:'evidence',decisionId:repaired.id,requirementId:'support',
+        documentDigest:'<SHA256-OF-FRESH-SUPPORT-REVIEW>'
+      })}`);
+    return repaired;
   }
 
   async handleEvidence(result) {
