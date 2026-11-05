@@ -193,6 +193,43 @@ export function createGate({
       return snapshot(decision);
     },
 
+
+    /**
+     * Atomically preserve a verified BLOCKED decision and open a new,
+     * distinct review of a repaired Git commit. Callers must independently
+     * verify commit ancestry and tests *before* invoking this transition.
+     */
+    beginSupersedingBlocked(blockedId, newSha, newId = `repair-${randomUUID()}`) {
+      const blocked = record(blockedId);
+      invariant(statusOf(blocked) === 'BLOCKED' && !blocked.superseded &&
+        !blocked.approved && !blocked.executed, 'NOT_BLOCKED',
+        'Only an active, unapproved BLOCKED decision can be superseded');
+      invariant(isSha(newSha) && newSha !== blocked.sha, 'BAD_REPAIRED_SHA',
+        'Repair requires a distinct exact Git commit SHA');
+      invariant(typeof newId === 'string' && newId.length > 0 &&
+        !decisions.has(newId), 'DUPLICATE_ID', 'A fresh repaired decision ID is required');
+      const repaired = {
+        id: newId,
+        sha: newSha,
+        superseded: false,
+        approved: false,
+        executed: false,
+        requirements: new Map([...reqs.keys()].map((key) => [
+          key, { id: key, state: 'MISSING', source: null, report: null }
+        ])),
+        approval: null,
+        capability: null,
+        receipt: null
+      };
+      blocked.superseded = true;
+      blocked.approved = false;
+      decisions.set(newId, repaired);
+      log(blockedId, 'SUPERSEDED', { newSha, newDecisionId: newId });
+      log(newId, 'DECISION_CREATED', { sha: newSha, supersedes: blockedId });
+      persist();
+      return { previous: snapshot(blocked), repaired: snapshot(repaired) };
+    },
+
     // Evidence is a provenance claim, not a passing test. The Switch adapter
     // must authenticate the event before calling this method.
     discover(id, { requirementId, room, eventId, documentDigest, collector }) {

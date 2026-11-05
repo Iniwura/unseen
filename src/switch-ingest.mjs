@@ -151,6 +151,20 @@ export class SwitchEventIngestor {
       remember();
       return { accepted: true, type: 'release_request', eventId: eventKey, result, command };
     }
+    if (command.kind === 'repair_review_request') {
+      assert(identity.kind === 'human' && identity.role === 'release-owner',
+        'REPAIR_REVIEW_SENDER_DENIED', 'Only the linked release owner may request independent repair review');
+      assert(policy.name === 'release-room', 'REPAIR_REVIEW_ROOM_DENIED',
+        'Repair review must originate in release-room');
+      assert(typeof command.blockedDecisionId === 'string' &&
+        typeof command.originalSha === 'string' && typeof command.newSha === 'string',
+        'BAD_REPAIR_REVIEW', 'Repair review requires exact blocked decision and both Git SHAs');
+      assert(typeof this.onCommand === 'function', 'COMMAND_UNAVAILABLE',
+        'No repair review handler is installed');
+      const result = this.onCommand({ ...command, sender:payload.sender, room:policy.name, eventId:messageId });
+      remember();
+      return { accepted:true, type:'repair_review_request', eventId:eventKey, result, command };
+    }
     if (command.kind === 'remediation' || command.kind === 'remediation_ready') {
       assert(identity.kind === 'agent' && identity.role === 'coding-agent', 'REMEDIATION_SENDER_DENIED', 'Only the configured coding agent can submit remediation work');
       assert(typeof this.onRemediation === 'function', 'REMEDIATION_UNAVAILABLE', 'No authorized remediation handler is installed');

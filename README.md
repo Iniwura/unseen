@@ -76,6 +76,25 @@ Only when an exact, still-active, unapproved `PENDING_EVIDENCE` decision matches
 
 **Safety:** The existing `live:blocked` bridge remains in blocked-only mode; the command grants no approval, execution, remediation or coding-agent privileges. Running `--apply` is an explicit, narrowly scoped permission change; running the dry-run alone makes no changes.
 
+## Continue from verified live BLOCKED to repaired release review
+
+The original real Switch decision `live-block-a9eb054a-9564-42bf-aaf1-c3b7ee5a9c8c` is **BLOCKED**, and the engineering agent has now *reported* a repaired child commit `f1f440a8f8a1f71052e27d6bad4c8c5acbd9e078`. Agent claims alone do not authorize a release.
+
+After stopping the prior **blocked-only** listener with `Ctrl+C`, run from the existing UNSEEN project directory:
+
+```powershell
+git pull --ff-only
+if ($LASTEXITCODE -eq 0) { npm.cmd run live:recover }
+```
+
+The live recovery command never changes Switch authorization or resets the checkout. It confirms the repaired Git HEAD, exact original parent, clean worktree, and only the declared `src/refund.mjs` and `test/refund-regression.test.mjs` changes. It actually executes both allowlisted tests and refuses an empty run. It then matches the engineer's specific repair report to the previously authorized opaque Switch sender, rechecks both original evidence senders and the prior verified human-owner request, and verifies the exact original release state. Any mismatch fails closed.
+
+If the original decision is still `BLOCKED`, the command prints **one exact `@unseen-gatekeeper UNSEEN/1 repair_review_request`** to post from the linked human account in `release-room`, after `UNSEEN listening` appears. **It does not repost a release request.** The Gatekeeper independently rechecks commit ancestry and reruns both tests. Only if they really pass does the gate atomically preserve the original as `SUPERSEDED` and open a new review for the repaired SHA.
+
+Gatekeeper then requests **fresh, addressed** engineering and support evidence for the new repaired decision. Their separate replies cause independent baseline and refund verification again. A `READY_FOR_APPROVAL` result is **not** authorization: only a separate exact-SHA, exact-evidence-digest, one-use nonce approval by the linked human in release-room produces an auditable `release-preview` receipt. **No production deployment occurs.**
+
+The coding-agent slot remains unassigned; this is explicitly a **human-requested independent review of an engineer-authored repair**, not a falsely attributed coding-agent event. The prior blocked-only safety lock remains unchanged and must be stopped before running recovery. Recovery can resume the already opened repaired decision after a restart, without re-posting the review request.
+
 ## Show the actual live BLOCKED decision
 
 Once the scoped evidence-agent authorization returns `status: evidence-agents-bound`, use:

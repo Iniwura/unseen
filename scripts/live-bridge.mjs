@@ -93,6 +93,7 @@ if (missing.length > 0) {
       'coding-agent': env.SWITCH_CODING_AGENT_ID ? (env.SWITCH_CODING_MENTION ?? '@coding-agent') : ''
     },
     blockedOnly: env.UNSEEN_BLOCKED_ONLY === '1',
+    recoveryReview: env.UNSEEN_RECOVERY_REVIEW === '1',
     stateStore: workflowStore
   });
 

@@ -89,8 +89,10 @@ async function run() {
   env.SWITCH_ENGINEERING_MENTION = '@ini-unseen-engineer';
   env.SWITCH_INVESTIGATOR_MENTION = '@switch-buddy-admin';
   // The coding agent remains deliberately unauthorized for the blocked phase.
-  delete env.SWITCH_CODING_AGENT_ID;
-  delete env.SWITCH_CODING_MENTION;
+  // Set empty strings instead of deleting keys: the live bridge loads
+  // .env.local again and must not repopulate an optional coding-agent role.
+  env.SWITCH_CODING_AGENT_ID = '';
+  env.SWITCH_CODING_MENTION = '';
 
   const requests = createJsonStore('.unseen/live-blocked-request.json');
   const saved = requests.load();
