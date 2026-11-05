@@ -117,3 +117,23 @@ test('connection frame handling is serialized before a reconnect is allowed', as
   await connection.closedPromise;
   assert.deepEqual(order, ['start-1', 'end-1', 'start-2', 'end-2']);
 });
+
+test('room participant discovery uses the authenticated explicit-room read endpoint', async () => {
+  const requests = [];
+  const client = new SwitchClient({
+    bridgeUrl: 'http://127.0.0.1:64821',
+    agentId: 'gatekeeper',
+    apiKey: 'private-key',
+    fetchImpl: async (url, options) => {
+      requests.push({ url, options });
+      return { ok: true, status: 200, text: async () => JSON.stringify({ participants: [{ agent_id: 'engineer-id', name: 'ini-unseen-engineer', type: 'agent' }] }) };
+    }
+  });
+  const result = await client.listParticipants('room-id');
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].url, 'http://127.0.0.1:64821/agents/rooms/room-id/participants');
+  assert.equal(requests[0].options.method, 'GET');
+  assert.equal(requests[0].options.headers.authorization, 'Bearer private-key');
+  assert.equal(Object.hasOwn(requests[0].options.headers, 'x-switch-connection-id'), false);
+  assert.deepEqual(result.participants[0].agent_id, 'engineer-id');
+});
