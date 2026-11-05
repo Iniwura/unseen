@@ -86,7 +86,11 @@ if (!url || !env.SWITCH_AGENT_ID || !env.SWITCH_AGENT_API_KEY) {
             complete(matched.addressed ? 'verified' : 'unaddressed');
           }
         },
-        onError: (error) => { report.websocketErrorCode = error?.code ?? 'WS_ERROR'; }
+        onError: (error) => {
+          report.websocketErrorCode = error?.code ?? 'WS_ERROR';
+          const status = /^Unexpected server response: (\\d{3})$/.exec(String(error?.message ?? ''));
+          if (status) report.websocketHttpStatus = Number(status[1]);
+        }
       });
       const timeout = setTimeout(() => complete('timeout'), 120_000);
       const outcome = await Promise.race([
@@ -102,7 +106,11 @@ if (!url || !env.SWITCH_AGENT_ID || !env.SWITCH_AGENT_API_KEY) {
       printAndExit(outcome === 'verified' ? 0 : 2);
     }
   } catch (error) {
-    report.error = { code: error?.code ?? 'ERROR', status: error?.status ?? null };
+    const handshake = /^Unexpected server response: (\\d{3})$/.exec(String(error?.message ?? ''));
+    report.error = {
+      code: error?.code ?? (handshake ? 'WS_HANDSHAKE_REFUSED' : 'ERROR'),
+      status: error?.status ?? (handshake ? Number(handshake[1]) : null)
+    };
     printAndExit(2);
   }
 }
