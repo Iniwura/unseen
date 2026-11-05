@@ -116,9 +116,12 @@ export function createAllowlistedRunner({
       });
       // A zero exit code is not evidence that any tests ran. Require the
       // Node TAP footer for our fixed `node --test <file>` allowlist entries.
-      if (definition.file === process.execPath && definition.args[0] === '--test' &&
-          !/^# tests [1-9]\\d*\\r?$/m.test(result.stdout)) {
-        throw new RunnerError('NO_TEST_RESULTS', 'Allowlisted test command produced no nonzero TAP test count');
+      if (definition.file === process.execPath && definition.args[0] === '--test') {
+        const summaryLine = result.stdout.split('\n').find((line) => line.trim().startsWith('# tests '));
+        const count = summaryLine === undefined ? 0 : Number(summaryLine.trim().slice('# tests '.length));
+        if (!Number.isSafeInteger(count) || count < 1) {
+          throw new RunnerError('NO_TEST_RESULTS', 'Allowlisted test command produced no nonzero TAP test count');
+        }
       }
       const after = await gitHead(root, { timeoutMs: Math.min(timeoutMs, 15_000), maxOutputBytes });
       assert(after === sha, 'CHECKOUT_CHANGED', 'Checkout HEAD changed during verification');
