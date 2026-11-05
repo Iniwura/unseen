@@ -21,7 +21,7 @@ if (!bridgeUrl || !env.SWITCH_AGENT_ID || !env.SWITCH_AGENT_API_KEY) {
     if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([name, item]) => [name, redact(item, name)]));
     return value;
   };
-  const participantId = (participant) => participant?.id ?? participant?.participant_id ?? participant?.participantId ?? participant?.user_id ?? participant?.userId ?? null;
+  const participantId = (participant) => participant?.id ?? participant?.participant_id ?? participant?.participantId ?? participant?.agent_id ?? participant?.agentId ?? participant?.user_id ?? participant?.userId ?? null;
   const participantLabels = (participant) => [participant?.name, participant?.display_name, participant?.displayName, participant?.username, participant?.handle, participant?.slug, participant?.agent_name, participant?.agentName].filter(Boolean).map((value) => String(value).toLowerCase());
   const exactParticipant = (allParticipants, requestedName) => {
     if (!requestedName) return null;
@@ -41,7 +41,9 @@ if (!bridgeUrl || !env.SWITCH_AGENT_ID || !env.SWITCH_AGENT_API_KEY) {
     }
     const participants = {};
     const rawParticipants = [];
-    for (const room of [release, support].filter(Boolean)) {
+    for (const room of [release, support]) {
+      // The room-specific endpoint does not require a live WebSocket claim.
+      // It independently verifies membership for the Gatekeeper API key.
       const response = await client.listParticipants(roomId(room));
       const roomParticipants = operationList(response, ['participants', 'users', 'members', 'data', 'items']);
       rawParticipants.push(...roomParticipants);
