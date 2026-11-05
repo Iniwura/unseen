@@ -13,7 +13,12 @@ loadLocalEnv();
 const env = process.env;
 const localSwitch = discoverLocalSwitch();
 if (!env.SWITCH_BRIDGE_URL && localSwitch?.bridgeUrl) env.SWITCH_BRIDGE_URL = localSwitch.bridgeUrl;
-if (!env.UNSEEN_CHECKOUT_ROOT && existsSync(resolve('.git'))) env.UNSEEN_CHECKOUT_ROOT = resolve('.');
+const demoCheckout = resolve('.unseen/live-checkout');
+// The repo root is UNSEEN's own implementation, not the vulnerable checkout.
+// Never silently fall back to verifying the wrong repository.
+if (!env.UNSEEN_CHECKOUT_ROOT && existsSync(resolve(demoCheckout, '.git'))) {
+  env.UNSEEN_CHECKOUT_ROOT = demoCheckout;
+}
 const required = [
   'SWITCH_BRIDGE_URL', 'SWITCH_AGENT_ID', 'SWITCH_AGENT_API_KEY',
   'SWITCH_RELEASE_ROOM_ID', 'SWITCH_SUPPORT_ROOM_ID',
@@ -24,7 +29,8 @@ const required = [
 const missing = required.filter((name) => !env[name]);
 if (missing.length > 0) {
   console.error(`Missing live UNSEEN configuration: ${missing.join(', ')}`);
-  console.error('Run npm run diagnose:switch for a grouped diagnostic.');
+  if (missing.includes('UNSEEN_CHECKOUT_ROOT')) console.error('Run npm.cmd run prepare:live to create the independent checkout first.');
+  console.error('Run npm run diagnose:switch for remaining configuration.');
   process.exitCode = 2;
 } else {
   const statePath = env.UNSEEN_STATE_PATH ?? '.unseen/state.json';
