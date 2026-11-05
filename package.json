@@ -19,6 +19,7 @@
     "inspect:switch": "node scripts/inspect-switch-message.mjs",
     "inspect:agents": "node scripts/inspect-live-agent-senders.mjs",
     "authorize:agents": "node scripts/authorize-live-evidence-agents.mjs",
+    "authorize:routing": "node scripts/authorize-reciprocal-routing.mjs",
     "authorize:switch": "node scripts/authorize-switch-gatekeeper.mjs",
     "confirm:link": "node scripts/confirm-existing-mattermost-link.mjs",
     "live:blocked": "node scripts/run-live-blocked.mjs",
