@@ -29,7 +29,7 @@ export function assertUsableLinkedIdentity(identity, coreVersion) {
     throw new Error('Mattermost link requires its official confirmation code');
   }
   if (identity.verified === undefined && typeof coreVersion === 'string'
-      && /^0\\.31\\./.test(coreVersion)) {
+      && coreVersion.startsWith('0.31.')) {
     return 'legacy-claimed-0.31';
   }
   throw new Error('Unknown Switch identity verification state or server version');
