@@ -24,3 +24,19 @@ export function buildScopedGatekeeperPolicy(existingPolicy, { roomId, externalUs
   });
   return { policy: { rules }, changed: true };
 }
+
+/** Gateway/Pydantic may change JSON object key order without changing a policy.
+ * Compare exact values and rule order while canonicalizing dictionary keys.
+ */
+export function sameScopedPolicy(actual, expected) {
+  if (!Array.isArray(actual?.rules) || !Array.isArray(expected?.rules)) return false;
+  const canonical = (value) => {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value !== null && typeof value === 'object') {
+      return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, val]) => [key, canonical(val)]));
+    }
+    return value;
+  };
+  return JSON.stringify(canonical(actual.rules)) === JSON.stringify(canonical(expected.rules));
+}
