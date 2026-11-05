@@ -19,7 +19,7 @@ export function parseUnseenMessage(body) {
   // Mattermost keeps the explicit agent mention in the message body.
   // Strip ONLY Gatekeeper's exact leading handle; never scan a message for
   // a protocol fragment or accept another agent's mention as our command.
-  const text = body.replace(/^@unseen-gatekeeper[ \\t]+/i, '');
+  const text = body.replace(/^@unseen-gatekeeper +/i, '');
   if (!text.startsWith(prefix)) return null;
   try {
     const parsed = JSON.parse(text.slice(prefix.length));
