@@ -21,6 +21,21 @@ The Switch connection badge reflects the **current saved connection state**, whi
 
 **Demo recording:** open the dashboard alongside Switch Console. Show the actual blocked/superseded/repaired records and the human-authorized preview receipt. The dashboard is explanatory; all workflow mutations still happen through authenticated Switch events. Use the [recording guide](docs/SUBMISSION_DEMO_GUIDE.md).
 
+## Reproduce the dashboard without your own Switch server
+
+From a fresh clone, run:
+
+```bash
+npm ci
+npm run demo:board
+```
+
+Open `http://127.0.0.1:4173`. This one command executes the real local protocol-harness workflow: a passing checkout baseline, failing successive-refund regression, repaired Git commit, independently rerun tests, and an evidence-bound simulated approval and local receipt. It then displays the **actual computed decisions and audit events** in the same read-only dashboard used for live Switch state.
+
+The screen prominently marks **LOCAL PROTOCOL HARNESS** and never claims these locally constructed Switch frames came from an authenticated live Switch connection. A separate ignored `.unseen/local-harness-board.json` holds this preview; the command does **not** overwrite `.unseen/state.json`, alter the operator's live workflow, contact Switch, or deploy anything. The demo checkout is temporary and removed after execution, so its Git SHA is evidence of the test run, not a durable checkout the judge can fetch. Re-run the command to reproduce it.
+
+For the real multi-agent session, see the [live Switch receipt](docs/LIVE_COMPLETION_RECEIPT_2026-11-05.md) and the [video capture guide](docs/SUBMISSION_DEMO_GUIDE.md). A recorded real Switch Console session remains necessary to demonstrate the live integration publicly.
+
 ## Completed live Switch result · November 5, 2026
 
 **Actual local Switch workflow completed and human-authorized.** This is not merely the `npm run demo` protocol harness.
