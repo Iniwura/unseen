@@ -122,8 +122,10 @@ async function run() {
   env.SWITCH_RELEASE_OWNER_MENTION = '@user';
   env.UNSEEN_RECOVERY_REVIEW = '1';
   env.UNSEEN_BLOCKED_ONLY = '0';
-  delete env.SWITCH_CODING_AGENT_ID;
-  delete env.SWITCH_CODING_MENTION;
+  // Set empty strings instead of deleting keys: the live bridge loads
+  // .env.local again and must not repopulate an optional coding-agent role.
+  env.SWITCH_CODING_AGENT_ID = '';
+  env.SWITCH_CODING_MENTION = '';
 
   report.preflight='verified';
   report.phase = resumed ? 'resuming-existing-repaired-review' : 'awaiting-owner-repair-review-request';
