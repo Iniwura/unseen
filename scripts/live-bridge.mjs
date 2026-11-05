@@ -92,6 +92,7 @@ if (missing.length > 0) {
       investigator: env.SWITCH_INVESTIGATOR_MENTION ?? '@evidence-investigator',
       'coding-agent': env.SWITCH_CODING_AGENT_ID ? (env.SWITCH_CODING_MENTION ?? '@coding-agent') : ''
     },
+    blockedOnly: env.UNSEEN_BLOCKED_ONLY === '1',
     stateStore: workflowStore
   });
 

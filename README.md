@@ -53,6 +53,22 @@ The board is available at `http://127.0.0.1:4173`. It is intentionally read-only
 
 `npm run replay` repeats the local protocol-harness recovery. `npm run reset:local` removes only the repository-local `.unseen/` state directory. `npm run diagnose:switch` discovers the Switch Console's native local-server ports, checks configuration presence, the checkout path, runtime availability, and unauthenticated bridge health without printing secret values. After the local server is running, `npm run register:switch` uses the local bootstrap registration token in-process, saves only the returned Gatekeeper credentials to ignored owner-only `.env.local`, and `npm run discover:switch` uses authenticated `list_rooms`/`list_participants` operations to resolve exact room IDs. It never guesses IDs or prints credentials.
 
+## Show the actual live BLOCKED decision
+
+Once the scoped evidence-agent authorization returns `status: evidence-agents-bound`, use:
+
+```powershell
+npm.cmd run live:blocked
+```
+
+This is a single preflight and live bridge command. It **does not** redo registration, permissions or agent setup. The command verifies a real passing baseline and intentionally failing refund regression against the separate persistent candidate `a921b8a5d51c0a8a58fcdcd59c0963ac012d8627`. It then discovers both rooms, cross-checks both authorized agent sender IDs against their already observed authenticated Switch history messages, and recovers the release owner from the **previously verified live release proof**. It refuses conflicted/missing evidence and refuses to use UNSEEN's product Git HEAD.
+
+The command prints one fresh **real Switch release request**, which the human posts from the linked `user` account into `release-room`, **after the bridge reports a successful connection**. Keep PowerShell running. The bridge posts a real request to `@ini-unseen-engineer`, awaits addressed evidence and performs its own allowlisted baseline test. It then posts a support request to `@switch-buddy-admin` in `support-room`. The investigator must return an addressed, source-backed `UNSEEN/1` evidence message; the Gatekeeper independently runs the refund regression on that same Git SHA, records exit 1 and posts a **BLOCKED** decision to Switch. The real existing reports can be cited, but they do not themselves count as protocol evidence events.
+
+This command explicitly enables a **blocked-only safety lock** that ignores even otherwise valid approval or remediation messages. It cannot authorize a release or accept a coding-agent repair during this first live phase. All state is local/ignored. `npm run demo` remains a separate local protocol harness and is not evidence of this live run.
+
+After the confirmed live BLOCKED decision, the workflow can be switched to the repair/approval phase with an explicitly authorized coding agent and fresh verification against the repaired commit. Never claim the complete sequence was executed live before that happens.
+
 ## Authorize only the independently observed evidence agents
 
 Once `inspect:agents` finds the specific engineering and support reports, the guarded command `npm.cmd run authorize:agents` checks both report authors again against Switch Core 0.31's **authenticated registered-agent directory** and exact `listParticipants` room memberships. It also checks the pre-existing Gatekeeper ownership and restricted policy before proposing any changes.

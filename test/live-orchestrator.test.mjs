@@ -22,7 +22,7 @@ function frame(id, roomId, sender, body) {
   return { event: 'message', id, data: { type: 'message', room_id: roomId, bridge_id: null, payload: { addressed: true, sender, message_id: `switch-message-${id}`, body } } };
 }
 
-function setup({ runner } = {}) {
+function setup({ runner, blockedOnly = false } = {}) {
   const gate = createGate({ runnerSecret: 'live-orchestrator-test-secret-long-enough', authorizedHumans: ['owner'] });
   const posts = [];
   const contexts = [];
@@ -50,6 +50,7 @@ function setup({ runner } = {}) {
     },
     client,
     ingestor,
+    blockedOnly,
     rooms: { release: 'release-room', support: 'support-room' },
     mentions: { engineering: '@engineering', investigator: '@investigator', 'coding-agent': '@coding', 'release-owner': '@owner' },
     stateStore: createMemoryStore()
@@ -153,4 +154,26 @@ test('event gap reloads both rooms and keeps the workflow paused when context is
   assert.equal(contexts.length, 2);
   assert.equal(ingestor.gapDetected, false);
   assert.ok(posts.at(-1).content.includes('reloaded both room contexts'));
+});
+
+
+test('blocked-only live milestone refuses approval and remediation even from otherwise trusted identities', async () => {
+  const { gate, orchestrator, connection } = setup({ blockedOnly: true });
+  await orchestrator.handleFrame(frame(80,'release-room','owner',
+    unseenMessage({kind:'release_request',decisionId:'LOCKED-1',sha:INITIAL_SHA})),connection);
+  await orchestrator.handleFrame(frame(81,'release-room','engineering',
+    unseenMessage({kind:'evidence',decisionId:'LOCKED-1',requirementId:'engineering',documentDigest:sha256('engineering evidence')})),connection);
+  await orchestrator.handleFrame(frame(82,'support-room','investigator',
+    unseenMessage({kind:'evidence',decisionId:'LOCKED-1',requirementId:'support',documentDigest:sha256('support evidence')})),connection);
+  assert.equal(gate.describe('LOCKED-1').status,'READY_FOR_APPROVAL');
+  const before = gate.describe('LOCKED-1');
+  const refusal = await orchestrator.handleFrame(frame(83,'release-room','owner',
+    unseenMessage({kind:'approval',decisionId:'LOCKED-1',sha:INITIAL_SHA,evidenceDigest:before.evidenceDigest,nonce:'not-allowed'})),connection);
+  assert.equal(refusal.blockedOnly,true);
+  assert.equal(gate.describe('LOCKED-1').approved,false);
+  assert.equal(gate.describe('LOCKED-1').executed,false);
+  const remediation = await orchestrator.handleFrame(frame(84,'support-room','coding',
+    unseenMessage({kind:'remediation_ready',decisionId:'LOCKED-1',newSha:FIXED_SHA})),connection);
+  assert.equal(remediation.blockedOnly,true);
+  assert.equal(gate.describe('LOCKED-1').sha,INITIAL_SHA);
 });

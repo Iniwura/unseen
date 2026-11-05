@@ -21,6 +21,7 @@
     "authorize:agents": "node scripts/authorize-live-evidence-agents.mjs",
     "authorize:switch": "node scripts/authorize-switch-gatekeeper.mjs",
     "confirm:link": "node scripts/confirm-existing-mattermost-link.mjs",
+    "live:blocked": "node scripts/run-live-blocked.mjs",
     "connect:switch": "node scripts/live-bridge.mjs",
     "start": "node src/server.mjs"
   },
