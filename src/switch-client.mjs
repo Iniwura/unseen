@@ -18,7 +18,10 @@ function assert(ok, code, message) {
 function toSocketUrl(httpUrl) {
   const url = new URL(httpUrl);
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-  return url;
+  // WHATWG URL serializes an origin with a trailing slash. Appending
+  // `/agents/...` without trimming it creates `//agents/...`, which
+  // Switch's strict WebSocket route does not accept.
+  return url.href.replace(/\/$/, '');
 }
 
 function normalizeFrame(value) {
