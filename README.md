@@ -65,9 +65,9 @@ Implemented and locally verified:
 - Read-only release board with a responsive evidence-oriented interface, state API, audit API, and counterfactual replay endpoint.
 - An actual local checkout demo. It creates a Git repository, runs a passing baseline, runs a real failing successive-refund test, commits a repair, retests the exact repaired SHA, and produces an approval receipt.
 
-The local demo uses a clearly labelled protocol harness because this environment has no Switch Console, Docker, or authenticated Switch server. It does not claim those local frames are live Switch traffic.
+The local demo deliberately runs an independent protocol harness without Switch credentials or an authenticated Switch server. Its constructed frames are not live Switch traffic. The separate real Switch workflow completed on the operator's Windows host on November 5, as documented above.
 
-## Verified live Switch milestone (November 5, 2026)
+## Earlier Switch entry-point milestone (historical, November 5, 2026)
 
 The **first fail-closed release decision has now run against the operator's actual Switch Core 0.31.0 / Mattermost server**. The human sent an addressed `release_request` from their linked `user` account in `release-room`. UNSEEN authenticated the event, recorded the exact candidate Git SHA, persisted the `PENDING_EVIDENCE` decision, and posted the blocked/missing-evidence result back into the real room.
 
@@ -77,7 +77,7 @@ The **first fail-closed release decision has now run against the operator's actu
 - **Proof and exact transcript:** [November 5 live Switch proof](docs/LIVE_SWITCH_PROOF_2026-11-05.md).
 - **Repeat:** `npm.cmd run smoke:release` using an existing local server and exact verified sender binding. The command prints the fresh message to post; it never approves a release or deploys.
 
-**Proof boundary:** This is a real Switch-connected **entry-point and missing-evidence gate test**, not an end-to-end live remediation/approval recording. The complete blocked-refund, repaired-commit and approval sequence is implemented and locally tested, but must still be exercised through actual Switch agents and rooms before being claimed live. The `ini-unseen-engineer` agent exists, but its authenticated event sender has not yet been bound to the live orchestrator.
+**Historical proof boundary:** At this earlier point, only the authenticated entry-point and missing-evidence gate were live. This limitation was subsequently resolved: the live BLOCKED → SUPERSEDED → VERIFIED → human AUTHORIZED flow is documented in the [November 5 completion receipt](docs/LIVE_COMPLETION_RECEIPT_2026-11-05.md). A public recording remains outstanding.
 
 ## Run it
 
@@ -138,7 +138,7 @@ Only the real human release-owner sender, in release-room, on the authenticated 
 
 The operator then copies the **newest** `UNSEEN/1 {"kind":"approval",...}` message from Gatekeeper into an addressed release-room post, unchanged. If the old challenge has become stale again, refresh again rather than editing the signed evidence digest or nonce by hand. The final action is a local `release-preview` audit receipt, never production deployment.
 
-## Continue from verified live BLOCKED to repaired release review
+## Historical operator recovery steps (the live workflow is now complete)
 
 The original real Switch decision `live-block-a9eb054a-9564-42bf-aaf1-c3b7ee5a9c8c` is **BLOCKED**, and the engineering agent has now *reported* a repaired child commit `f1f440a8f8a1f71052e27d6bad4c8c5acbd9e078`. Agent claims alone do not authorize a release.
 
@@ -157,7 +157,7 @@ Gatekeeper then requests **fresh, addressed** engineering and support evidence f
 
 The coding-agent slot remains unassigned; this is explicitly a **human-requested independent review of an engineer-authored repair**, not a falsely attributed coding-agent event. The prior blocked-only safety lock remains unchanged and must be stopped before running recovery. Recovery can resume the already opened repaired decision after a restart, without re-posting the review request.
 
-## Show the actual live BLOCKED decision
+## Historical blocked-release reproduction steps
 
 Once the scoped evidence-agent authorization returns `status: evidence-agents-bound`, use:
 
