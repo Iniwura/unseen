@@ -88,7 +88,7 @@ if (!url || !env.SWITCH_AGENT_ID || !env.SWITCH_AGENT_API_KEY) {
         },
         onError: (error) => {
           report.websocketErrorCode = error?.code ?? 'WS_ERROR';
-          const status = /^Unexpected server response: (\\d{3})$/.exec(String(error?.message ?? ''));
+          const status = /^Unexpected server response: (\d{3})$/.exec(String(error?.message ?? ''));
           if (status) report.websocketHttpStatus = Number(status[1]);
         }
       });
@@ -106,7 +106,7 @@ if (!url || !env.SWITCH_AGENT_ID || !env.SWITCH_AGENT_API_KEY) {
       printAndExit(outcome === 'verified' ? 0 : 2);
     }
   } catch (error) {
-    const handshake = /^Unexpected server response: (\\d{3})$/.exec(String(error?.message ?? ''));
+    const handshake = /^Unexpected server response: (\d{3})$/.exec(String(error?.message ?? ''));
     report.error = {
       code: error?.code ?? (handshake ? 'WS_HANDSHAKE_REFUSED' : 'ERROR'),
       status: error?.status ?? (handshake ? Number(handshake[1]) : null)
