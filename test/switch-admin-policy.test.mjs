@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildScopedGatekeeperPolicy } from '../src/switch-admin-policy.mjs';
+import { buildScopedGatekeeperPolicy, sameScopedPolicy } from '../src/switch-admin-policy.mjs';
 
 const room = 'b2043fc6-5a53-44a5-acf9-b755d40d6351';
 const identity = '00000000-0000-4000-8000-000000000001';
@@ -26,4 +26,23 @@ test('existing exact scoped rule is idempotent', () => {
 test('never overwrites open, malformed or unknown authorization state', () => {
   for(const p of [null,{}, {rules:[]}, {rules:'open'}])assert.throws(()=>buildScopedGatekeeperPolicy(p,{roomId:room,externalUserRowId:identity}));
   assert.throws(()=>buildScopedGatekeeperPolicy(old,{roomId:'bad',externalUserRowId:identity}));
+});
+
+test('exact policy verification ignores JSON key order but not rule changes', () => {
+  const expected = buildScopedGatekeeperPolicy(old,{roomId:room,externalUserRowId:identity}).policy;
+  const swapped = {rules: expected.rules.map(rule =>
+    Object.fromEntries(Object.entries(rule).reverse())
+  )};
+  assert.equal(sameScopedPolicy(swapped, expected),true);
+  assert.equal(sameScopedPolicy({rules: swapped.rules.slice(0,1)},expected),false);
+  assert.equal(sameScopedPolicy(null, expected),false);
+});
+test('empty room group selector does not make an existing policy effective', () => {
+  const unreachable = {rules:[{
+    rooms:[room], room_groups:[], users:[identity], agents:[],
+    owner:false, owner_agents:false, platform:false
+  }]};
+  const {changed,policy}=buildScopedGatekeeperPolicy(unreachable,{roomId:room,externalUserRowId:identity});
+  assert.equal(changed,true);
+  assert.equal(policy.rules.length,2);
 });
