@@ -29,6 +29,7 @@ try {
   write('test/baseline.test.mjs', `import test from 'node:test';\nimport assert from 'node:assert/strict';\ntest('checkout loads', () => assert.equal(typeof 1, 'number'));\n`);
   write('test/refund-regression.test.mjs', `import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { issueRefund } from '../src/refund.mjs';\ntest('successive refunds never exceed the captured amount', () => {\n  const order = { captured: 100, refunded: 0 };\n  assert.equal(issueRefund(order, 50), 50);\n  assert.equal(issueRefund(order, 60), 50);\n  assert.equal(order.refunded, 100);\n});\n`);
   const initialSha = commit('checkout: candidate release');
+  log('candidate exact commit', initialSha);
 
   const gate = createGate({ runnerSecret: 'demo-runner-secret-that-is-long-enough', authorizedHumans: ['@release-owner:local'] });
   const decision = gate.begin(initialSha, 'DEMO-RECOVERY-1');

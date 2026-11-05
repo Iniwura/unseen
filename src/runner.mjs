@@ -102,12 +102,27 @@ export function createAllowlistedRunner({
       const before = await gitHead(root, { timeoutMs: Math.min(timeoutMs, 15_000), maxOutputBytes });
       assert(before === sha, 'STALE_SHA', 'Checkout HEAD does not match the decision SHA');
       await gitClean(root, { timeoutMs: Math.min(timeoutMs, 15_000), maxOutputBytes });
+      // Node's own test runner sets NODE_TEST_CONTEXT on its workers.
+      // Passing it to a nested `node --test` makes the subprocess return 0
+      // without executing the test file. Never inherit test-runner control
+      // variables from the caller into a trusted verification command.
+      const commandEnv = { ...process.env, CI: '1', NODE_OPTIONS: '--no-addons' };
+      delete commandEnv.NODE_TEST_CONTEXT;
       const result = await runProcess(definition.file, definition.args, {
         cwd: root,
-        env: { ...process.env, CI: '1', NODE_OPTIONS: '--no-addons' },
+        env: commandEnv,
         timeoutMs,
         maxOutputBytes
       });
+      // A zero exit code is not evidence that any tests ran. Require the
+      // Node TAP footer for our fixed `node --test <file>` allowlist entries.
+      if (definition.file === process.execPath && definition.args[0] === '--test') {
+        const summaryLine = result.stdout.split('\n').find((line) => line.trim().startsWith('# tests '));
+        const count = summaryLine === undefined ? 0 : Number(summaryLine.trim().slice('# tests '.length));
+        if (!Number.isSafeInteger(count) || count < 1) {
+          throw new RunnerError('NO_TEST_RESULTS', 'Allowlisted test command produced no nonzero TAP test count');
+        }
+      }
       const after = await gitHead(root, { timeoutMs: Math.min(timeoutMs, 15_000), maxOutputBytes });
       assert(after === sha, 'CHECKOUT_CHANGED', 'Checkout HEAD changed during verification');
       await gitClean(root, { timeoutMs: Math.min(timeoutMs, 15_000), maxOutputBytes });
