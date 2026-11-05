@@ -16,9 +16,13 @@ function participantLookup(participants, id) {
 export function parseUnseenMessage(body) {
   if (typeof body !== 'string') return null;
   const prefix = 'UNSEEN/1 ';
-  if (!body.startsWith(prefix)) return null;
+  // Mattermost keeps the explicit agent mention in the message body.
+  // Strip ONLY Gatekeeper's exact leading handle; never scan a message for
+  // a protocol fragment or accept another agent's mention as our command.
+  const text = body.replace(/^@unseen-gatekeeper[ \\t]+/i, '');
+  if (!text.startsWith(prefix)) return null;
   try {
-    const parsed = JSON.parse(body.slice(prefix.length));
+    const parsed = JSON.parse(text.slice(prefix.length));
     return parsed && typeof parsed === 'object' ? parsed : null;
   } catch {
     throw new SwitchIngestError('MALFORMED_MESSAGE', 'UNSEEN message is not valid JSON');
