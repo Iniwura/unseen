@@ -53,6 +53,12 @@ The board is available at `http://127.0.0.1:4173`. It is intentionally read-only
 
 `npm run replay` repeats the local protocol-harness recovery. `npm run reset:local` removes only the repository-local `.unseen/` state directory. `npm run diagnose:switch` discovers the Switch Console's native local-server ports, checks configuration presence, the checkout path, runtime availability, and unauthenticated bridge health without printing secret values. After the local server is running, `npm run register:switch` uses the local bootstrap registration token in-process, saves only the returned Gatekeeper credentials to ignored owner-only `.env.local`, and `npm run discover:switch` uses authenticated `list_rooms`/`list_participants` operations to resolve exact room IDs. It never guesses IDs or prints credentials.
 
+## Inspect existing real Switch agent reports
+
+After the engineer and support agent have posted their investigation results, use `npm.cmd run inspect:agents`. This is **read-only**: it searches authenticated Gatekeeper `read_context` responses for their already-posted, uniquely identified reports in `release-room` and `support-room`, and reports observed opaque sender IDs. It checks the exact prepared vulnerable candidate SHA.
+
+**An observed sender is not automatically a trusted role.** Never assign engineering, investigator or coding permissions solely by a matching display name. The human owner must confirm each returned identity against the registered Switch agent, intended room and report before a narrowly scoped role configuration can be applied. The command does not write `.env.local`, change Switch permissions, send messages, execute tests, issue approvals or deploy anything.
+
 ## Prepare a real candidate for the live Switch demonstration
 
 The one-time local demo in `npm run demo` uses a **disposable** Git checkout. The live multi-agent demonstration needs a **persistent separate checkout** that the engineering, investigator and coding agents can inspect, test and repair.
