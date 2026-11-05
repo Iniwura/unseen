@@ -3,6 +3,7 @@ import { discoverLocalSwitch, readLocalSwitchEnv } from '../src/local-switch.mjs
 import { SwitchClient } from '../src/switch-client.mjs';
 import { operationList, findRoomByExactName, roomId } from '../src/switch-discovery.mjs';
 import { buildScopedGatekeeperPolicy } from '../src/switch-admin-policy.mjs';
+import { linkedMattermostAccount, assertUsableLinkedIdentity } from '../src/switch-link-confirmation.mjs';
 
 // Native Windows-only admin operation. No secrets are printed, written, exported,
 // transmitted to external hosts, or persisted. Never changes ownership or rooms.
@@ -75,16 +76,25 @@ async function run() {
   if (me?.role !== 'admin') return safeError('SESSION_NOT_ADMIN');
   report.administrator = 'authorized';
 
+  step = 'core-version';
+  const declaration = (await request('/gateway/version', { cookie })).json;
+  const version = declaration?.version;
+  if (typeof version !== 'string' || !version) return safeError('UNKNOWN_CORE_VERSION');
+  report.coreVersion = version;
+
   step = 'linked-mattermost-identity';
   const identities = (await request('/gateway/auth/me/identities', { cookie })).json;
   if (!Array.isArray(identities)) return safeError('INVALID_IDENTITIES_RESPONSE');
-  const linked = identities.filter((identity) =>
-    identity?.bridge_type === 'mattermost' &&
-    identity?.external_username === 'user'
-  );
-  if (linked.length !== 1) return safeError('EXACT_USER_IDENTITY_NOT_LINKED');
-  if (linked[0].verified !== true) return safeError('LINK_NOT_YET_VERIFIED');
-  report.mattermostIdentity = 'verified-user';
+  // v0.31.0 returns claimed identities without any 'verified' field. Its
+  // confirmation code endpoint does not exist (404). The existing claim is
+  // trusted by Switch itself in this version; don't demand a newer API.
+  const identity = linkedMattermostAccount(identities, 'user');
+  if (identity.verified === false) return safeError('LINK_NOT_YET_VERIFIED');
+  try {
+    report.mattermostIdentity = assertUsableLinkedIdentity(identity, version);
+  } catch {
+    return safeError('LINK_STATE_INCOMPATIBLE_WITH_CORE');
+  }
 
   step = 'gatekeeper-detail';
   const detail = (await request(`/gateway/agents/${encodeURIComponent(agentId)}`, { cookie })).json;
@@ -104,7 +114,7 @@ async function run() {
 
   step = 'current-addressing-policy';
   const oldPolicy = detail.addressing_policy;
-  const plan = buildScopedGatekeeperPolicy(oldPolicy, { roomId: release, externalUserRowId: linked[0].id });
+  const plan = buildScopedGatekeeperPolicy(oldPolicy, { roomId: release, externalUserRowId: identity.id });
   report.existingPolicy = 'restricted';
   report.currentRules = oldPolicy.rules.length;
   report.proposedRules = plan.policy.rules.length;
