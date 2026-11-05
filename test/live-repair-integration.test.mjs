@@ -214,3 +214,95 @@ test('blocked-only mode cannot accept a repair review, and strangers cannot init
     {code:'SENDER_NOT_PERMITTED'});
   assert.equal(gate.describe('blocked-original').status,'BLOCKED');
 });
+
+
+function latestApproval(posts) {
+  const prompts=posts.filter((p)=>p.content.includes('"kind":"approval"'));
+  assert.ok(prompts.length, 'a live Gatekeeper challenge must exist');
+  const last=prompts.at(-1).content;
+  return { prompts, command:JSON.parse(last.slice(last.indexOf('UNSEEN/1 ')+'UNSEEN/1 '.length)) };
+}
+async function setupReadyRepairedReview(t) {
+  const {root,originalSha,repairedSha}=makeCheckout(t);
+  const gate=blockedGate(originalSha);
+  const {workflow,posts,connection}=orchestratorFor(gate,root);
+  await workflow.handleFrame(frame(100,'release-room','owner',unseenMessage({
+    kind:'repair_review_request',blockedDecisionId:'blocked-original',originalSha,newSha:repairedSha
+  })),connection);
+  const id=workflow.state.activeDecisionId;
+  await workflow.handleFrame(frame(101,'release-room','engineer',unseenMessage({
+    kind:'evidence',decisionId:id,requirementId:'engineering',
+    documentDigest:sha256('engineering fresh source')
+  })),connection);
+  await workflow.handleFrame(frame(102,'support-room','investigator',unseenMessage({
+    kind:'evidence',decisionId:id,requirementId:'support',
+    documentDigest:sha256('support fresh source')
+  })),connection);
+  assert.equal(gate.describe(id).status,'READY_FOR_APPROVAL');
+  return {gate,workflow,posts,connection,root,originalSha,repairedSha,id};
+}
+
+test('a second trusted support evidence event automatically invalidates the prior approval and sends a current digest-bound challenge',async(t)=>{
+  const {gate,workflow,posts,connection,id,repairedSha}=await setupReadyRepairedReview(t);
+  const first=latestApproval(posts);
+  assert.equal(first.prompts.length,1);
+  const oldDigest=first.command.evidenceDigest;
+  // Same support content digest but a fresh Switch source event changes the
+  // canonical source record. The prior challenge must be replaced.
+  await workflow.handleFrame(frame(103,'support-room','investigator',unseenMessage({
+    kind:'evidence',decisionId:id,requirementId:'support',
+    documentDigest:sha256('support fresh source')
+  })),connection);
+  const next=latestApproval(posts);
+  assert.equal(next.prompts.length,2);
+  assert.notEqual(next.command.evidenceDigest,oldDigest);
+  assert.notEqual(next.command.nonce,first.command.nonce);
+  assert.equal(next.command.sha,repairedSha);
+  assert.equal(gate.describe(id).status,'READY_FOR_APPROVAL');
+  await assert.rejects(()=>workflow.handleFrame(frame(104,'release-room','owner',
+    unseenMessage({kind:'approval',...first.command})),connection),{code:'STALE_EVIDENCE'});
+  assert.equal(gate.describe(id).approved,false);
+  await workflow.handleFrame(frame(105,'release-room','owner',
+    unseenMessage({kind:'approval',...next.command})),connection);
+  assert.equal(gate.describe(id).status,'EXECUTED');
+  assert.equal(gate.describe(id).receipt?.result?.action,'release-preview');
+});
+
+test('only a linked human in release-room can request a new current approval challenge; request never approves',async(t)=>{
+  const {gate,workflow,posts,connection,id,repairedSha}=await setupReadyRepairedReview(t);
+  const prior=latestApproval(posts);
+  const refresh=unseenMessage({kind:'approval_refresh_request',decisionId:id,sha:repairedSha});
+  const requested=await workflow.handleFrame(frame(106,'release-room','owner',refresh),connection);
+  assert.ok(requested);
+  const newPrompt=latestApproval(posts);
+  assert.equal(newPrompt.prompts.length,2);
+  assert.equal(newPrompt.command.evidenceDigest,prior.command.evidenceDigest);
+  assert.notEqual(newPrompt.command.nonce,prior.command.nonce);
+  assert.equal(gate.describe(id).approved,false);
+  assert.equal(gate.describe(id).executed,false);
+  await assert.rejects(()=>workflow.handleFrame(frame(107,'release-room','owner',
+    unseenMessage({kind:'approval',...prior.command})),connection),{code:'INVALID_NONCE'});
+  await assert.rejects(()=>workflow.handleFrame(frame(108,'release-room','engineer',refresh),connection),
+    {code:'CHALLENGE_REFRESH_SENDER_DENIED'});
+  await assert.rejects(()=>workflow.handleFrame(frame(109,'support-room','investigator',refresh),connection),
+    {code:'CHALLENGE_REFRESH_SENDER_DENIED'});
+  await assert.rejects(()=>workflow.handleFrame(frame(110,'release-room','owner',
+    unseenMessage({kind:'approval_refresh_request',decisionId:id,sha:'f'.repeat(40)})),connection),
+    {code:'STALE_APPROVAL_REFRESH'});
+  assert.equal(gate.describe(id).approved,false);
+  await workflow.handleFrame(frame(111,'release-room','owner',
+    unseenMessage({kind:'approval',...newPrompt.command})),connection);
+  assert.equal(gate.describe(id).status,'EXECUTED');
+});
+
+test('blocked-only mode never issues a renewal challenge',async(t)=>{
+  const {root,originalSha,repairedSha}=makeCheckout(t);
+  const gate=blockedGate(originalSha);
+  const {workflow,posts,connection}=orchestratorFor(gate,root,{recoveryReview:false,blockedOnly:true});
+  const ignored=await workflow.handleFrame(frame(120,'release-room','owner',unseenMessage({
+    kind:'approval_refresh_request',decisionId:'blocked-original',sha:repairedSha
+  })),connection);
+  assert.equal(ignored.blockedOnly,true);
+  assert.equal(gate.describe('blocked-original').status,'BLOCKED');
+  assert.equal(posts.length,0);
+});
