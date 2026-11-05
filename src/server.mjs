@@ -1,6 +1,6 @@
 import { createServer as createHttpServer } from 'node:http';
 import { readFileSync, statSync } from 'node:fs';
-import { extname, normalize, resolve } from 'node:path';
+import { extname, isAbsolute, normalize, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createGate } from './gate.mjs';
 import { createJsonStore } from './store.mjs';
@@ -19,7 +19,10 @@ function json(response, status, value) {
 function staticFile(response, publicDir, pathname) {
   const root = resolve(publicDir);
   const candidate = resolve(root, `.${pathname === '/' ? '/index.html' : pathname}`);
-  if (!(candidate === root || candidate.startsWith(`${root}/`))) {
+  // Use path.relative rather than a hard-coded '/' separator: Windows resolves
+  // local paths with '\\', and a string-prefix check would reject valid assets.
+  const relativePath = relative(root, candidate);
+  if (relativePath === '..' || relativePath.startsWith(`..${sep}`) || isAbsolute(relativePath)) {
     return json(response, 404, { error: 'not_found' });
   }
   try {
