@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { isGitSha } from './gate.mjs';
-import { unseenMessage } from './switch-ingest.mjs';
+import { unseenMessage, parseUnseenMessage } from './switch-ingest.mjs';
 import { createMemoryStore } from './store.mjs';
 
 export class LiveWorkflowError extends Error {
@@ -24,6 +24,7 @@ export class LiveOrchestrator {
     ingestor,
     rooms,
     mentions = {},
+    blockedOnly = false,
     stateStore = createMemoryStore()
   } = {}) {
     assert(gate && runner && client && ingestor, 'BAD_WORKFLOW', 'Live workflow dependencies are required');
@@ -34,6 +35,7 @@ export class LiveOrchestrator {
     this.ingestor = ingestor;
     this.rooms = rooms;
     this.mentions = mentions;
+    this.blockedOnly = blockedOnly === true;
     this.stateStore = stateStore;
     this.state = { activeDecisionId: null, supportRequestedFor: null, approvalChallengeFor: null, lastError: null, ...(stateStore.load?.() ?? {}) };
   }
@@ -60,6 +62,15 @@ export class LiveOrchestrator {
   }
 
   async handleFrame(frame, connection) {
+    // The live blocked-only milestone must not accept an approval, remediation
+    // or execution capability even if one is posted by an otherwise authorized
+    // user/agent. This check precedes the ingestor's gate mutation.
+    if (this.blockedOnly && frame?.event === 'message') {
+      const kind = parseUnseenMessage(frame.data?.payload?.body)?.kind;
+      if (['approval','remediation','remediation_ready'].includes(kind)) {
+        return { ignored: true, blockedOnly: true, command: kind };
+      }
+    }
     const result = this.ingestor.handleFrame(frame, connection);
     if (result?.accepted && result.type === 'release_request') return this.startRelease(result.command, result.eventId);
     if (result?.accepted && result.type === 'evidence') return this.handleEvidence(result);
