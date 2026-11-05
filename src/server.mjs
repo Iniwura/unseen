@@ -1,6 +1,6 @@
 import { createServer as createHttpServer } from 'node:http';
 import { readFileSync, statSync } from 'node:fs';
-import { extname, isAbsolute, normalize, relative, resolve, sep } from 'node:path';
+import { extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createGate } from './gate.mjs';
 import { createJsonStore } from './store.mjs';
@@ -64,7 +64,10 @@ export function createUnseenServer({ gate, publicDir = resolve(fileURLToPath(new
       }
     }
     if (request.method !== 'GET') return json(response, 405, { error: 'read_only', message: 'UNSEEN mutations happen through the authenticated Switch and local adapters.' });
-    return staticFile(response, publicDir, normalize(url.pathname));
+    // URL paths are always forward-slash separated. On Windows, path.normalize('/')
+    // becomes '\\', breaking the '/' -> index.html mapping in staticFile.
+    // Keep the URL pathname intact; staticFile resolves and checks filesystem paths.
+    return staticFile(response, publicDir, url.pathname);
   });
 }
 
