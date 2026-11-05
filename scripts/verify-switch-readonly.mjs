@@ -28,9 +28,11 @@ if (!endpoint || missing.length) {
   process.exitCode = 2;
 } else {
   const client = new SwitchClient({ bridgeUrl: endpoint, agentId: process.env.SWITCH_AGENT_ID, apiKey: process.env.SWITCH_AGENT_API_KEY });
+  let step = 'health';
   try {
     await client.health();
     report.core = 'reachable';
+    step = 'get_agent_detail';
     const detailResponse = await client.operation('get_agent_detail', { agent_id: process.env.SWITCH_AGENT_ID });
     const details = detailResponse?.result ?? detailResponse;
     if (details?.id !== process.env.SWITCH_AGENT_ID) {
@@ -39,6 +41,7 @@ if (!endpoint || missing.length) {
     report.gatekeeperIdentity = 'authenticated';
     const addressing = details?.addressing?.policy;
     report.addressing = typeof addressing === 'string' ? addressing : 'unknown';
+    step = 'list_rooms';
     const roomResponse = await client.listRooms();
     const rooms = operationList(roomResponse, ['rooms', 'data', 'items']);
     for (const [name, field] of [['release-room', 'releaseRoom'], ['support-room', 'supportRoom']]) {
@@ -74,7 +77,7 @@ if (!endpoint || missing.length) {
     print();
   } catch (error) {
     report.next = 'Authenticated operation failed. No credentials or room state were changed.';
-    report.error = { code: error?.code ?? 'ERROR', status: error?.status ?? null };
+    report.error = { step, code: error?.code ?? 'ERROR', status: error?.status ?? null };
     print();
     process.exitCode = 2;
   }
