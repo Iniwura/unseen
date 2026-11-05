@@ -76,7 +76,15 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const liveStatusPath = process.env.UNSEEN_LIVE_STATUS_PATH ?? resolve('.unseen/live-status.json');
   const authorizedHumans = (process.env.UNSEEN_AUTHORIZED_HUMANS ?? '').split(',').map((value) => value.trim()).filter(Boolean);
   const gate = createGate({ store: createJsonStore(statePath), authorizedHumans });
-  const server = createUnseenServer({ gate, liveStatusStore: createJsonStore(liveStatusPath), metadata: { switchEvidence: 'live status not observed' } });
+  const localHarness = process.env.UNSEEN_BOARD_SOURCE === 'local-protocol-harness';
+  const server = createUnseenServer({
+    gate,
+    liveStatusStore: localHarness ? null : createJsonStore(liveStatusPath),
+    metadata: {
+      boardSource: localHarness ? 'local-protocol-harness' : 'persisted-live-store',
+      switchEvidence: localHarness ? 'local-protocol-harness' : 'live status not observed'
+    }
+  });
   const port = Number(process.env.PORT ?? 4173);
   server.listen(port, '127.0.0.1', () => console.log(`UNSEEN board listening at http://127.0.0.1:${port}`));
 }
