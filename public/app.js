@@ -1,4 +1,5 @@
-const decisionsNode = document.querySelector('#decisions');
+const decisionsNode = document.querySelector('#decisions-list');
+const leadNode = document.querySelector('#lead-case');
 const emptyNode = document.querySelector('#empty');
 const countNode = document.querySelector('#decision-count');
 const updatedNode = document.querySelector('#last-updated');
@@ -17,12 +18,45 @@ const stateClass = (state) => state === 'VERIFIED_PASS' ? 'pass' : state === 'VE
 function render(data) {
   const decisions = data.decisions ?? [];
   const switchStatus = data.metadata?.switch ?? 'not connected';
-  const connected = switchStatus === 'connected';
+  const connected = switchStatus === 'connected' && data.metadata?.switchEvidence === 'live-switch';
   const switchLabel = connected ? 'Switch live' : switchStatus === 'reconnecting' || switchStatus === 'connect-error' ? 'Switch reconnecting' : switchStatus === 'gap' ? 'Switch recovering' : 'Switch not connected';
   connectionNode.innerHTML = `<span class="pulse ${connected ? 'live' : ''}"></span><span>${switchLabel}</span>`;
-  countNode.textContent = decisions.length === 0 ? 'No release under review' : `${decisions.length} release${decisions.length === 1 ? '' : 's'} under review`;
+  countNode.textContent = decisions.length === 0 ? 'No release recorded' : `${decisions.length} release decision${decisions.length === 1 ? '' : 's'}`;
   emptyNode.hidden = decisions.length !== 0;
-  updatedNode.textContent = decisions.length === 0 ? 'Waiting for evidence' : `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  // The editorial case study must reflect real persisted gate state. No
+  // simulated status, receipt, or agent message is displayed by default.
+  const latest = decisions.length ? decisions.at(-1) : null;
+  leadNode.hidden = !latest;
+  if (latest) {
+    const headline = ({
+      EXECUTED: ['PREVIEW', 'AUTHORIZED'], AUTHORIZED: ['AWAITING', 'RECEIPT'],
+      BLOCKED: ['RELEASE', 'BLOCKED'], READY_FOR_APPROVAL: ['READY FOR', 'APPROVAL'],
+      PENDING_EVIDENCE: ['GATHERING', 'EVIDENCE'], SUPERSEDED: ['REVIEW', 'SUPERSEDED'],
+      EXECUTION_FAILED: ['EXECUTION', 'FAILED']
+    })[latest.status] ?? ['RELEASE', 'IN REVIEW'];
+    const requirement = (id) => latest.requirements.find((item) => item.id === id)?.state ?? 'MISSING';
+    const showState = (id) => esc(requirement(id).replaceAll('_', ' ').toLowerCase());
+    const receipt = latest.receipt?.receiptId
+      ? `Receipt · ${esc(latest.receipt.receiptId)}` : `Decision · ${esc(latest.id)}`;
+    leadNode.innerHTML = `
+      <div class="lead-main">
+        <div class="lead-top"><span>CURRENT GATE DECISION</span><span class="lead-star" aria-hidden="true">✳</span></div>
+        <div class="lead-status ${latest.status === 'BLOCKED' ? 'blocked' : ''}">${headline.map(esc).join('<br>')}<span class="period">.</span></div>
+        <div class="lead-bottom"><span>${receipt}</span><span>01 / EVIDENCE-BOUND</span></div>
+      </div>
+      <div class="lead-side">
+        <div class="lead-facts">
+          <div class="lead-fact"><span class="lead-label">EXACT COMMIT</span><span class="lead-value mono">${esc(shortSha(latest.sha))}</span></div>
+          <div class="lead-fact"><span class="lead-label">ENGINEERING</span><span class="lead-value">${showState('engineering')}</span></div>
+          <div class="lead-fact"><span class="lead-label">SUPPORT</span><span class="lead-value">${showState('support')}</span></div>
+        </div>
+        <button class="lead-action" type="button" aria-label="Inspect current release decision">
+          <span>Inspect evidence & audit</span><span aria-hidden="true">↗</span>
+        </button>
+      </div>`;
+    leadNode.querySelector('button').addEventListener('click', () => openDetail(latest.id));
+  }
+  updatedNode.textContent = decisions.length === 0 ? 'Waiting for evidence' : `CHECKED ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · READ ONLY`;
   decisionsNode.innerHTML = decisions.map((decision) => `
     <article class="decision" tabindex="0" data-decision-id="${esc(decision.id)}" aria-label="Open replay for ${esc(decision.id)}">
       <div class="decision-main"><div class="decision-id">${esc(decision.id)}</div><p class="sha"><strong>${esc(shortSha(decision.sha))}</strong> · policy ${esc(decision.policyVersion)}</p></div>
