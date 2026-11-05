@@ -53,6 +53,14 @@ The board is available at `http://127.0.0.1:4173`. It is intentionally read-only
 
 `npm run replay` repeats the local protocol-harness recovery. `npm run reset:local` removes only the repository-local `.unseen/` state directory. `npm run diagnose:switch` discovers the Switch Console's native local-server ports, checks configuration presence, the checkout path, runtime availability, and unauthenticated bridge health without printing secret values. After the local server is running, `npm run register:switch` uses the local bootstrap registration token in-process, saves only the returned Gatekeeper credentials to ignored owner-only `.env.local`, and `npm run discover:switch` uses authenticated `list_rooms`/`list_participants` operations to resolve exact room IDs. It never guesses IDs or prints credentials.
 
+## Authorize only the independently observed evidence agents
+
+Once `inspect:agents` finds the specific engineering and support reports, the guarded command `npm.cmd run authorize:agents` checks both report authors again against Switch Core 0.31's **authenticated registered-agent directory** and exact `listParticipants` room memberships. It also checks the pre-existing Gatekeeper ownership and restricted policy before proposing any changes.
+
+`npm.cmd run authorize:agents -- --apply` explicitly grants **only** `ini-unseen-engineer` in `release-room` and `switch-buddy-admin` in `support-room`, preserving owner, human and all other original rules. It verifies the exact policy readback and saves their observed opaque event sender IDs to ignored `.env.local` without displaying or rotating credentials.
+
+The observed sender is established by a unique previous Switch report and is checked against registered name and room membership. This uses server-authenticated records but does not offer a cryptographic certificate mapping the historical chat display name to a bot ID; treat it as an explicitly authorized local demo binding, not as third-party attestation. No coding agent is assigned by this step.
+
 ## Inspect existing real Switch agent reports
 
 After the engineer and support agent have posted their investigation results, use `npm.cmd run inspect:agents`. This is **read-only**: it searches authenticated Gatekeeper `read_context` responses for their already-posted, uniquely identified reports in `release-room` and `support-room`, and reports observed opaque sender IDs. It checks the exact prepared vulnerable candidate SHA.

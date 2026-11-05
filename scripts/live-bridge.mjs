@@ -23,7 +23,7 @@ const required = [
   'SWITCH_BRIDGE_URL', 'SWITCH_AGENT_ID', 'SWITCH_AGENT_API_KEY',
   'SWITCH_RELEASE_ROOM_ID', 'SWITCH_SUPPORT_ROOM_ID',
   'SWITCH_RELEASE_OWNER_ID', 'SWITCH_ENGINEERING_AGENT_ID',
-  'SWITCH_INVESTIGATOR_AGENT_ID', 'SWITCH_CODING_AGENT_ID',
+  'SWITCH_INVESTIGATOR_AGENT_ID',
   'UNSEEN_CHECKOUT_ROOT'
 ];
 const missing = required.filter((name) => !env[name]);
@@ -57,6 +57,9 @@ if (missing.length > 0) {
     policyVersion,
     attestor: (report) => gate.runnerAttestation(report)
   });
+  // The blocked-decision phase needs only engineering and support agents.
+  // A coding agent is optional until the independently verified repair phase.
+  // Without an explicit coding sender binding, remediation is always denied.
   const ingestor = new SwitchEventIngestor({
     gate,
     agentId: env.SWITCH_AGENT_ID,
@@ -69,7 +72,9 @@ if (missing.length > 0) {
       [env.SWITCH_RELEASE_OWNER_ID]: { kind: 'human', role: 'release-owner' },
       [env.SWITCH_ENGINEERING_AGENT_ID]: { kind: 'agent', role: 'engineering-agent' },
       [env.SWITCH_INVESTIGATOR_AGENT_ID]: { kind: 'agent', role: 'evidence-investigator' },
-      [env.SWITCH_CODING_AGENT_ID]: { kind: 'agent', role: 'coding-agent' }
+      ...(env.SWITCH_CODING_AGENT_ID
+        ? { [env.SWITCH_CODING_AGENT_ID]: { kind: 'agent', role: 'coding-agent' } }
+        : {})
     },
     eventStore,
     onRemediation: (command) => command,
@@ -85,7 +90,7 @@ if (missing.length > 0) {
       'release-owner': env.SWITCH_RELEASE_OWNER_MENTION ?? '@release-owner',
       engineering: env.SWITCH_ENGINEERING_MENTION ?? '@engineering-agent',
       investigator: env.SWITCH_INVESTIGATOR_MENTION ?? '@evidence-investigator',
-      'coding-agent': env.SWITCH_CODING_MENTION ?? '@coding-agent'
+      'coding-agent': env.SWITCH_CODING_AGENT_ID ? (env.SWITCH_CODING_MENTION ?? '@coding-agent') : ''
     },
     stateStore: workflowStore
   });
