@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {planReciprocalAgentPolicy,planMatches,eligibleEngineeringRetry} from '../src/reciprocal-addressing.mjs';
+import {planReciprocalAgentPolicy,planMatches,eligibleEngineeringRetry,diagnoseEngineeringRetry} from '../src/reciprocal-addressing.mjs';
 
 const gatekeeperId='d88a22ec-6691-4481-aaec-1e3e41ac55e0';
 const release='b2043fc6-5a53-44a5-acf9-b755d40d6351';
@@ -54,4 +54,44 @@ test('retry is blocked if disconnected, stale, approval granted or evidence reco
   deny({persistedGate:{decisions:[{...decision,superseded:true}]}});
   deny({persistedGate:{decisions:[{...decision,requirements:[{id:'engineering',state:'DISCOVERED_UNVERIFIED'}]}]}});
   deny({persistedGate:{decisions:[]}});
+});
+
+test('safe retry diagnosis identifies the exact local blocker without leaking decision secrets',()=>{
+  const input={
+    workflow, persistedGate:{decisions:[decision]}, live, sha,
+    expectedDecisionId:id,requiredRooms:[release,support]
+  };
+  const healthy=diagnoseEngineeringRetry(input);
+  assert.equal(healthy.code,'ELIGIBLE_TO_RETRY');
+  assert.equal(healthy.report.sameActiveDecision,true);
+  assert.equal(healthy.report.engineeringState,'MISSING');
+  assert.equal(healthy.report.requiredRoomsPresent,true);
+
+  const disconnected=diagnoseEngineeringRetry({...input,live:{...live,status:'starting',rooms:[]}});
+  assert.equal(disconnected.code,'LIVE_BRIDGE_NOT_CONNECTED');
+  assert.equal(disconnected.report.connection,'starting');
+  const rooms=diagnoseEngineeringRetry({...input,live:{...live,rooms:[release]}});
+  assert.equal(rooms.code,'LIVE_ROOMS_NOT_CONFIRMED');
+  assert.equal(rooms.report.requiredRoomsPresent,false);
+  const stale=diagnoseEngineeringRetry({...input,workflow:{activeDecisionId:'different'}});
+  assert.equal(stale.code,'ACTIVE_DECISION_MISMATCH');
+  const busy=diagnoseEngineeringRetry({...input,workflow:{...workflow,pendingVerification:{requirementId:'engineering'}}});
+  assert.equal(busy.code,'VERIFICATION_ALREADY_PENDING');
+  const missing=diagnoseEngineeringRetry({...input,persistedGate:{decisions:[]}});
+  assert.equal(missing.code,'DECISION_RECORD_NOT_UNIQUE');
+  const differentSha=diagnoseEngineeringRetry({...input,sha:'f'.repeat(40)});
+  assert.equal(differentSha.code,'CANDIDATE_SHA_MISMATCH');
+  const approved=diagnoseEngineeringRetry({...input,persistedGate:{decisions:[{...decision,approved:true}]}});
+  assert.equal(approved.code,'RELEASE_ALREADY_FINALIZED');
+  const verified=diagnoseEngineeringRetry({...input,persistedGate:{decisions:[{...decision,requirements:[{id:'engineering',state:'VERIFIED_PASS'},{id:'support',state:'MISSING'}]}]}});
+  assert.equal(verified.code,'ENGINEERING_ALREADY_VERIFIED');
+  const pending=diagnoseEngineeringRetry({...input,persistedGate:{decisions:[{...decision,requirements:[{id:'engineering',state:'DISCOVERED_UNVERIFIED'}]}]}});
+  assert.equal(pending.code,'ENGINEERING_EVIDENCE_NOT_MISSING');
+
+  let error;
+  try{eligibleEngineeringRetry({...input,live:{...live,rooms:[]}});}catch(e){error=e;}
+  assert.equal(error.code,'LIVE_ROOMS_NOT_CONFIRMED');
+  assert.equal(error.diagnostic.subscribedRoomsCount,0);
+  assert.equal(JSON.stringify(error.diagnostic).includes('runnerSecret'),false);
+  assert.equal(JSON.stringify(error.diagnostic).includes('attestation'),false);
 });
