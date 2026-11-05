@@ -37,7 +37,7 @@ test('runner strips inherited Node test-context flag and observes an actually fa
     "import test from 'node:test';",
     "import assert from 'node:assert/strict';",
     "test('real failure cannot be hidden by a nested test context', () => assert.equal(60, 50));"
-  ].join('\\n'));
+  ].join('\n'));
   execFileSync('git', ['init', '-q'], { cwd: root });
   execFileSync('git', ['-c', 'user.name=runner-test', '-c', 'user.email=runner@example.invalid', 'add', '.'], { cwd: root });
   execFileSync('git', ['-c', 'user.name=runner-test', '-c', 'user.email=runner@example.invalid', 'commit', '-qm', 'regression fixture'], { cwd: root });
