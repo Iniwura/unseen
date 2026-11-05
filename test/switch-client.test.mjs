@@ -137,3 +137,16 @@ test('room participant discovery uses the authenticated explicit-room read endpo
   assert.equal(Object.hasOwn(requests[0].options.headers, 'x-switch-connection-id'), false);
   assert.deepEqual(result.participants[0].agent_id, 'engineer-id');
 });
+
+test('WebSocket connection uses the exact root agents route with no duplicate slash', async () => {
+  for (const base of ['http://127.0.0.1:64821', 'http://127.0.0.1:64821/']) {
+    const client = new SwitchClient({
+      bridgeUrl: base, agentId: 'gatekeeper', apiKey: 'private-key', WebSocketImpl: FakeSocket
+    });
+    const connection = await client.connect({ rooms: ['release-id', 'support-id'], scope: 'all' });
+    const endpoint = new URL(FakeSocket.instances.at(-1).url);
+    assert.equal(endpoint.pathname, '/agents/gatekeeper/connection/ws');
+    assert.equal(endpoint.searchParams.get('rooms'), 'release-id,support-id');
+    connection.close();
+  }
+});
