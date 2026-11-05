@@ -12,6 +12,7 @@
     "diagnose:switch": "node scripts/diagnose-switch.mjs",
     "register:switch": "node scripts/register-switch.mjs",
     "discover:switch": "node scripts/discover-switch.mjs",
+    "verify:switch": "node scripts/verify-switch-readonly.mjs",
     "connect:switch": "node scripts/live-bridge.mjs",
     "start": "node src/server.mjs"
   },
