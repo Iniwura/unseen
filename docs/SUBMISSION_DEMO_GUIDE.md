@@ -33,6 +33,10 @@ These are **timestamps for an edit**, not a claim that a video already exists. T
 - Clearly say “release-preview authorization, no deployment.”
 - Make the screen recording publicly viewable to judges. Do not submit `localhost` permalinks as proof.
 
+## Reproducibility cutaway
+
+Judges who do not have the original local Switch server can run `npm ci && npm run demo:board` to inspect the **local harness** state in the same UI. In the final video, use the real Switch Console for the human and agent messages. When showing a harness board, retain its visible **LOCAL PROTOCOL HARNESS** disclosure; never edit this label out or imply the preview shows the real session. The operator's live `.unseen/state.json` is not included in the public repository.
+
 ## Submission package
 
 - Repository: https://github.com/Iniwura/unseen
