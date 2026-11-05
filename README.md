@@ -53,6 +53,22 @@ The board is available at `http://127.0.0.1:4173`. It is intentionally read-only
 
 `npm run replay` repeats the local protocol-harness recovery. `npm run reset:local` removes only the repository-local `.unseen/` state directory. `npm run diagnose:switch` discovers the Switch Console's native local-server ports, checks configuration presence, the checkout path, runtime availability, and unauthenticated bridge health without printing secret values. After the local server is running, `npm run register:switch` uses the local bootstrap registration token in-process, saves only the returned Gatekeeper credentials to ignored owner-only `.env.local`, and `npm run discover:switch` uses authenticated `list_rooms`/`list_participants` operations to resolve exact room IDs. It never guesses IDs or prints credentials.
 
+## Prepare a real candidate for the live Switch demonstration
+
+The one-time local demo in `npm run demo` uses a **disposable** Git checkout. The live multi-agent demonstration needs a **persistent separate checkout** that the engineering, investigator and coding agents can inspect, test and repair.
+
+From the existing UNSEEN project directory on Windows:
+
+```powershell
+npm.cmd run prepare:live
+```
+
+This command creates a real nested Git checkout at `.unseen/live-checkout` (ignored by GitHub), commits a deliberately vulnerable refund candidate, and checks that the baseline passes while the successive-refunds regression **fails**. It reports the candidate's exact Git SHA and does not modify the UNSEEN product repository. Running it a second time is read-only. If an agent has modified, repaired or committed the candidate, it **refuses to reset it**.
+
+The actual release decision must be for the checkout SHA printed by this command, **not UNSEEN's own Git HEAD**. The live bridge now selects this checkout by default if it has been prepared; an explicit `UNSEEN_CHECKOUT_ROOT` can override that for an independently verified real project.
+
+**Trust boundary:** Creating a reproducible vulnerable checkout is an honest staged scenario, not a claim that independent support evidence or an agent-created repair has already occurred. The full live bridge still requires exact *observed* Switch sender identities for the human release owner, engineering agent, support investigator and coding agent. Never guess role IDs from usernames or room roster UUIDs, reuse a role without authorization, or claim local-harness events are live Switch events.
+
 ## Switch setup
 
 UNSEEN follows the current official protocol: register once with `POST /agents`, keep the returned agent API key, connect over `/agents/{id}/connection/ws`, answer `ping` frames with `{ "type": "pong", "cursor": n }`, resume with the stored cursor and generation, and call the operation registry over HTTP. SSE is not used because the current documentation marks it as deprecated.
