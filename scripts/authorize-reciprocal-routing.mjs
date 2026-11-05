@@ -123,14 +123,21 @@ async function main() {
   const gate = createJsonStore('.unseen/state.json').load();
   const live = createJsonStore('.unseen/live-status.json').load();
   let retry;
+  if (release?.sha !== originalCandidateSha) {
+    return fail('DURABLE_RELEASE_SHA_MISMATCH');
+  }
   try {
-    if (release?.sha !== originalCandidateSha) throw new Error('Target SHA changed');
-    retry = eligibleEngineeringRetry({workflow,persistedGate:gate,live,
-      sha:originalCandidateSha,expectedDecisionId:release?.decisionId});
-    if (!live.rooms.includes(proposals[0].roomId) || !live.rooms.includes(proposals[1].roomId)) {
-      throw new Error('Live bridge not subscribed to both intended rooms');
-    }
-  } catch { return fail('LIVE_RELEASE_NOT_READY_FOR_ENGINEERING_RETRY'); }
+    retry = eligibleEngineeringRetry({
+      workflow, persistedGate: gate, live,
+      sha: originalCandidateSha, expectedDecisionId: release?.decisionId,
+      requiredRooms: proposals.map((p) => p.roomId)
+    });
+  } catch (error) {
+    // Restrict diagnostics to fixed state flags; don't print persisted Gatekeeper
+    // state, runner secrets, source events, auth tokens or raw messages.
+    report.recovery = error?.diagnostic ?? null;
+    return fail(error?.code ?? 'LIVE_RELEASE_NOT_READY_FOR_ENGINEERING_RETRY');
+  }
   report.decisionId = retry.decisionId;
   report.targetSha = retry.sha;
 

@@ -16,26 +16,49 @@ export function planMatches(readback, expected) {
   return sameScopedPolicy(readback, expected);
 }
 
-export function eligibleEngineeringRetry({ workflow, persistedGate, live, sha, expectedDecisionId }) {
-  if (live?.status !== 'connected' || live?.evidence !== 'live-switch' ||
-      !Array.isArray(live.rooms) || !live.rooms.length) {
-    throw new Error('The existing live Switch bridge is not confirmed connected');
+/** Return only safe state labels, never state snapshots, secrets or event payloads. */
+export function diagnoseEngineeringRetry({ workflow, persistedGate, live, sha, expectedDecisionId, requiredRooms = [] }) {
+  const decisions = Array.isArray(persistedGate?.decisions) ? persistedGate.decisions : [];
+  const matches = expectedDecisionId ? decisions.filter((d) => d?.id === expectedDecisionId) : [];
+  const decision = matches.length === 1 ? matches[0] : null;
+  const engineeringState = decision?.requirements?.find((r) => r?.id === 'engineering')?.state ?? null;
+  const supportState = decision?.requirements?.find((r) => r?.id === 'support')?.state ?? null;
+  const subscribedRooms = Array.isArray(live?.rooms) ? live.rooms : [];
+  const report = {
+    connection: live?.status ?? 'not-recorded',
+    authenticatedLiveSource: live?.evidence === 'live-switch',
+    subscribedRoomsCount: subscribedRooms.length,
+    requiredRoomsPresent: requiredRooms.every((id) => subscribedRooms.includes(id)),
+    sameActiveDecision: Boolean(expectedDecisionId && workflow?.activeDecisionId === expectedDecisionId),
+    pendingVerification: workflow?.pendingVerification?.requirementId ?? null,
+    samePersistedDecisionCount: matches.length,
+    exactCandidateMatched: decision?.sha === sha,
+    decisionFinalized: Boolean(decision && (decision.superseded || decision.approved || decision.executed)),
+    engineeringState,
+    supportState
+  };
+  let code = 'ELIGIBLE_TO_RETRY';
+  if (live?.status !== 'connected' || live?.evidence !== 'live-switch') code = 'LIVE_BRIDGE_NOT_CONNECTED';
+  else if (!subscribedRooms.length || !report.requiredRoomsPresent) code = 'LIVE_ROOMS_NOT_CONFIRMED';
+  else if (!expectedDecisionId || !report.sameActiveDecision) code = 'ACTIVE_DECISION_MISMATCH';
+  else if (workflow?.pendingVerification) code = 'VERIFICATION_ALREADY_PENDING';
+  else if (matches.length !== 1) code = 'DECISION_RECORD_NOT_UNIQUE';
+  else if (decision?.sha !== sha) code = 'CANDIDATE_SHA_MISMATCH';
+  else if (report.decisionFinalized) code = 'RELEASE_ALREADY_FINALIZED';
+  else if (engineeringState === 'VERIFIED_PASS') code = 'ENGINEERING_ALREADY_VERIFIED';
+  else if (engineeringState !== 'MISSING') code = 'ENGINEERING_EVIDENCE_NOT_MISSING';
+  return { code, report };
+}
+
+export function eligibleEngineeringRetry({ workflow, persistedGate, live, sha, expectedDecisionId, requiredRooms = [] }) {
+  const { code, report } = diagnoseEngineeringRetry({
+    workflow, persistedGate, live, sha, expectedDecisionId, requiredRooms
+  });
+  if (code !== 'ELIGIBLE_TO_RETRY') {
+    const error = new Error('Existing release cannot accept an engineering retry in its current state');
+    error.code = code;
+    error.diagnostic = report;
+    throw error;
   }
-  if (!expectedDecisionId || workflow?.activeDecisionId !== expectedDecisionId ||
-      workflow?.pendingVerification) {
-    throw new Error('Active decision is missing, changed, or already being verified');
-  }
-  const decisions = persistedGate?.decisions;
-  const active = Array.isArray(decisions)
-    ? decisions.filter((d) => d?.id === expectedDecisionId)
-    : [];
-  if (active.length !== 1 || active[0].sha !== sha ||
-      active[0].superseded || active[0].approved || active[0].executed) {
-    throw new Error('Existing decision is not an active, unapproved exact-SHA release');
-  }
-  const evidence = active[0].requirements?.find((r) => r?.id === 'engineering');
-  if (!evidence || evidence.state !== 'MISSING') {
-    throw new Error('Engineering evidence is not missing; do not retry');
-  }
-  return { decisionId: active[0].id, sha: active[0].sha };
+  return { decisionId: expectedDecisionId, sha };
 }
