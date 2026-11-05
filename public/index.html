@@ -1,54 +1,80 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Evidence-backed release decisions for teams and AI agents.">
-    <title>UNSEEN — release evidence</title>
-    <link rel="stylesheet" href="/styles.css">
-  </head>
-  <body>
-    <main class="shell">
-      <header class="topbar">
-        <a class="wordmark" href="/" aria-label="UNSEEN home">UNSEEN<span class="dot">.</span></a>
-        <div class="connection" id="connection"><span class="pulse"></span><span>Switch not connected</span></div>
-      </header>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f5f0">
+  <meta name="description" content="UNSEEN. Evidence-driven release decisions, verified through Switch.">
+  <title>UNSEEN — The release record</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#decisions">Skip to release decisions</a>
+  <div class="shell" id="top">
+    <header class="topbar">
+      <a class="wordmark" href="#top" aria-label="UNSEEN home">UNSEEN<span class="dot" aria-hidden="true">✳</span></a>
+      <nav class="top-nav" aria-label="Main navigation">
+        <a href="#decisions">The release</a>
+        <a href="#method">Method</a>
+      </nav>
+      <div class="top-right">
+        <div class="connection" id="connection" aria-live="polite"><span class="pulse"></span><span>Switch not connected</span></div>
+        <a href="https://github.com/Iniwura/unseen" target="_blank" rel="noopener noreferrer" class="source-link">Source ↗</a>
+      </div>
+    </header>
 
+    <main>
       <section class="intro" aria-labelledby="title">
-        <p class="eyebrow">Release control</p>
-        <h1 id="title">See what the release is missing.</h1>
-        <p class="lede">Evidence from the people and agents closest to the work, bound to one exact artifact.</p>
+        <div class="intro-top"><span>RELEASE INTELLIGENCE / SWITCH</span><span>INDEPENDENT EVIDENCE. HUMAN CONTROL.</span></div>
+        <h1 id="title">WHAT THE<br><span class="headline-bottom">BUILD <em>MISSED.</em></span></h1>
+        <div class="intro-bottom">
+          <p class="lede">A green build can still be an unsafe release. UNSEEN finds the missing evidence, verifies the fix, and keeps people in control.</p>
+          <a class="intro-jump" href="#decisions">Explore the release <span aria-hidden="true">↘</span></a>
+        </div>
       </section>
 
-      <section class="board" aria-live="polite">
+      <section class="board" id="decisions" aria-labelledby="decision-count" aria-live="polite">
+        <div class="section-marker"><span>01 / THE RELEASE</span><span id="last-updated">Waiting for evidence</span></div>
         <div class="board-head">
-          <div>
-            <p class="eyebrow">Current decisions</p>
-            <h2 id="decision-count">No release under review</h2>
-          </div>
-          <span class="board-note" id="last-updated">Waiting for evidence</span>
+          <div><h2>Decisions,<br>not assumptions.</h2><p class="board-subtitle">Every claim leads back to an exact commit and its verified evidence.</p></div>
+          <span class="board-count" id="decision-count">No release under review</span>
         </div>
-        <div class="decisions" id="decisions"></div>
+        <div class="lead-case" id="lead-case" hidden></div>
+        <div class="ledger-caption"><span>DECISION LEDGER</span><span>SELECT A RECORD TO INSPECT THE PROOF</span></div>
+        <div class="decisions" id="decisions-list"></div>
         <div class="empty" id="empty">
-          <div class="empty-mark">○</div>
-          <p>A decision appears here when a release owner starts a review.</p>
-          <span>UNSEEN stays quiet until Switch supplies a real event.</span>
+          <span class="empty-mark" aria-hidden="true">✳</span>
+          <h3>No decision recorded.</h3>
+          <p>Records appear when an authenticated release request reaches UNSEEN through Switch.</p>
         </div>
         <section class="detail" id="detail" hidden aria-live="polite">
-          <div class="detail-head"><div><p class="eyebrow">Decision replay</p><h3 id="detail-title"></h3></div><button id="detail-close" type="button" aria-label="Close decision replay">Close</button></div>
+          <div class="detail-head">
+            <div><p class="eyebrow">DECISION EVIDENCE</p><h3 id="detail-title"></h3></div>
+            <button id="detail-close" type="button" aria-label="Close decision replay">Close <span aria-hidden="true">×</span></button>
+          </div>
           <div class="evidence-graph" id="evidence-graph"></div>
-          <div class="replay"><div><p class="eyebrow">Audit trail</p><div id="audit-trail"></div></div><div><p class="eyebrow">Counterfactual</p><p class="counterfactual" id="counterfactual"></p></div></div>
+          <div class="replay">
+            <div><p class="eyebrow">AUDIT TRAIL</p><div id="audit-trail"></div></div>
+            <div><p class="eyebrow">COUNTERFACTUAL</p><p class="counterfactual" id="counterfactual"></p></div>
+          </div>
         </section>
       </section>
 
-      <section class="principles" aria-label="How UNSEEN works">
-        <article><span>01</span><h3>Gather</h3><p>Rooms carry the evidence that a single release view cannot see.</p></article>
-        <article><span>02</span><h3>Challenge</h3><p>Contradictions and failed verification stop the artifact at the gate.</p></article>
-        <article><span>03</span><h3>Prove</h3><p>Only the exact tested commit can become an authorized decision.</p></article>
+      <section class="principles" id="method" aria-label="How UNSEEN works">
+        <div class="section-marker"><span>02 / THE METHOD</span><span>PROOF BEFORE PERMISSION</span></div>
+        <div class="method-top"><h2>PROOF<br>BEFORE <span>PERMISSION.</span></h2><p>Real agents bring the facts. UNSEEN tests the release. A human owns the final decision.</p></div>
+        <div class="method-grid">
+          <article><span>01</span><h3>Discover</h3><p>Engineering and support agents recover evidence across Switch rooms.</p></article>
+          <article><span>02</span><h3>Verify</h3><p>Exact Git SHA, fixed test commands, and a gate that fails closed.</p></article>
+          <article><span>03</span><h3>Authorize</h3><p>One human approval, bound to the verified artifact. Auditable receipt.</p></article>
+        </div>
       </section>
-
-      <footer><span>Evidence is the interface.</span><a href="https://docs.switchagents.ai/switch-rooms/internals/agent-protocol" rel="noreferrer">Switch protocol ↗</a></footer>
     </main>
-    <script src="/app.js" type="module"></script>
-  </body>
+
+    <footer><div><strong>UNSEEN<span class="dot" aria-hidden="true">✳</span></strong><span>Evidence is the interface.</span></div>
+      <div class="footer-links"><a href="#top">Back to top ↑</a><a href="https://github.com/Iniwura/unseen" target="_blank" rel="noopener noreferrer">GitHub ↗</a><span>BUILT WITH SWITCH</span></div>
+    </footer>
+  </div>
+  <script src="/app.js" type="module"></script>
+</body>
 </html>
