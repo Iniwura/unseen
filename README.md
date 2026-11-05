@@ -4,6 +4,23 @@ UNSEEN is an evidence-driven release gate for a human and AI agents working toge
 
 The signature flow is a checkout release that looks safe, an overlooked support requirement recovered in `support-room`, a real refund regression that blocks the candidate, an independently tested repair, and a human approval bound to the repaired commit and evidence digest.
 
+## Editorial release dashboard
+
+The read-only UNSEEN dashboard now uses a minimalist editorial design inspired by the typography, spacing and restrained interactions of [VERRIS](https://verris.framer.website/). It is an original release-control interface, not a copy of that portfolio template or its imagery.
+
+**To preview the real completed demo** in your existing local Windows checkout:
+
+```powershell
+git pull --ff-only
+npm.cmd start
+```
+
+Open `http://127.0.0.1:4173`. The main release spotlight, decision ledger, evidence graph and audit trail read `/api/state` and `/api/decisions/:id` from the **persisted local gate store**. If `.unseen/state.json` contains your verified live session, the interface shows the real original and repaired decisions, exact commits, receipt and audit history. If the store is empty, it shows an honest empty state. It never injects example cases, invents approval receipts or changes the release gate.
+
+The Switch connection badge reflects the **current saved connection state**, which can be disconnected after the live listener stops. That does not erase previously verified local decisions; the board is not a new Switch agent or a deployment system.
+
+**Demo recording:** open the dashboard alongside Switch Console. Show the actual blocked/superseded/repaired records and the human-authorized preview receipt. The dashboard is explanatory; all workflow mutations still happen through authenticated Switch events. Use the [recording guide](docs/SUBMISSION_DEMO_GUIDE.md).
+
 ## Completed live Switch result · November 5, 2026
 
 **Actual local Switch workflow completed and human-authorized.** This is not merely the `npm run demo` protocol harness.
