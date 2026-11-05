@@ -17,6 +17,7 @@
     "probe:switch": "node scripts/probe-switch-message.mjs",
     "smoke:release": "node scripts/smoke-release-switch.mjs",
     "inspect:switch": "node scripts/inspect-switch-message.mjs",
+    "inspect:agents": "node scripts/inspect-live-agent-senders.mjs",
     "authorize:switch": "node scripts/authorize-switch-gatekeeper.mjs",
     "confirm:link": "node scripts/confirm-existing-mattermost-link.mjs",
     "connect:switch": "node scripts/live-bridge.mjs",
