@@ -102,6 +102,7 @@ export class LiveOrchestrator {
     this.state.activeDecisionId = decision.id;
     this.state.supportRequestedFor = null;
     this.state.approvalChallengeFor = null;
+    this.state.approvalChallengeEvidenceDigest = null;
     this.state.lastError = null;
     this.persist();
     await this.post('release-room', `UNSEEN is reviewing checkout ${decision.sha} (decision ${decision.id}).`);
@@ -155,6 +156,7 @@ export class LiveOrchestrator {
     this.state.activeDecisionId = repaired.id;
     this.state.supportRequestedFor = null;
     this.state.approvalChallengeFor = null;
+    this.state.approvalChallengeEvidenceDigest = null;
     this.state.pendingVerification = null;
     this.state.lastError = null;
     this.persist();
@@ -245,6 +247,7 @@ export class LiveOrchestrator {
     this.state.activeDecisionId = repaired.id;
     this.state.supportRequestedFor = null;
     this.state.approvalChallengeFor = null;
+    this.state.approvalChallengeEvidenceDigest = null;
     this.persist();
     await this.post('release-room', `UNSEEN superseded blocked decision ${current.id}. Independent verification now targets repaired commit ${repaired.sha} (decision ${repaired.id}).`);
     await this.post('release-room', `${this.mention('engineering')}Verify the repaired commit and report a fresh engineering evidence event for decision ${repaired.id}.`);
