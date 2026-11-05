@@ -13,6 +13,7 @@
     "register:switch": "node scripts/register-switch.mjs",
     "discover:switch": "node scripts/discover-switch.mjs",
     "verify:switch": "node scripts/verify-switch-readonly.mjs",
+    "probe:switch": "node scripts/probe-switch-message.mjs",
     "connect:switch": "node scripts/live-bridge.mjs",
     "start": "node src/server.mjs"
   },
