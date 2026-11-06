@@ -70,9 +70,9 @@ if __name__ == "__main__":
     timings=[]
     for i,(start,stop,line) in enumerate(BEATS,1):
         p=OUT/f"beat_{i:02d}.mp3"
-        duration=float(subprocess.check_output(
-            ["ffprobe","-v","error","-show_entries","format=duration","-of","default=nokey=1:noprint_wrappers=1",str(p)],
-            text=True).strip())
+        # Durations are measured from each MP3 after downloading the artifact.
+        # Current CI runners do not guarantee a system ffprobe binary.
+        duration=None
         timings.append({"file":p.name,"start":start,"end":stop,"duration":duration,"target":stop-start,"text":line})
     (OUT/"timings.json").write_text(json.dumps({"engine":engine,"beats":timings},indent=2))
     print(json.dumps(timings,indent=2),flush=True)
