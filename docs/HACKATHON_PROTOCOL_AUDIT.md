@@ -1,5 +1,7 @@
 # UNSEEN — Flip the Switch submission and protocol audit
 
+> **Historical snapshot, November 5 (before the verified live completion):** P0 blockers below record the state *at that earlier time* and are not current. The real BLOCKED → verified repair → human-authorized release-preview sequence subsequently completed. For present evidence and submission status, read [JUDGE_START_HERE.md](JUDGE_START_HERE.md) and [LIVE_COMPLETION_RECEIPT_2026-11-05.md](LIVE_COMPLETION_RECEIPT_2026-11-05.md). Latest main CI passed 95 tests on each of Windows and Linux. The current remaining external submission requirements are a public video URL and manual form entry.
+
 Reviewed: 2026-11-05. Target: **Best Business Workflow ($2,000)**.
 Basis: WeMakeDevs hackathon pages, official Switch documentation, Switch agent operations source, UNSEEN repository, and the user's observed Windows/Switch output.
 Status: **audit, not proof of a working end-to-end live bridge**.
