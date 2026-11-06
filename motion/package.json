@@ -1,0 +1,22 @@
+{
+  "name": "unseen-motion",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts UNSEENProofStudy out/UNSEEN_Proof_Study.mp4 --codec=h264",
+    "frames": "remotion still src/index.ts UNSEENProofStudy out/preview.png --frame=300"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "remotion": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.8.0"
+  }
+}
