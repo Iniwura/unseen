@@ -4,6 +4,8 @@ UNSEEN is an evidence-driven release gate for a human and AI agents working toge
 
 The signature flow is a checkout release that looks safe, an overlooked support requirement recovered in `support-room`, a real refund regression that blocks the candidate, an independently tested repair, and a human approval bound to the repaired commit and evidence digest.
 
+**Judges and first-time reviewers:** [Start with the one-page demo, proof and reproduction guide](docs/JUDGE_START_HERE.md). The final 2:20 product/real-Switch film is prepared locally but **still needs a public video URL and a completed human submission**. The repository itself is not an entry confirmation.
+
 ## Editorial release dashboard
 
 The read-only UNSEEN dashboard now uses a minimalist editorial design inspired by the typography, spacing and restrained interactions of [VERRIS](https://verris.framer.website/). It is an original release-control interface, not a copy of that portfolio template or its imagery.
