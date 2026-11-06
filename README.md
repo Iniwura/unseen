@@ -4,7 +4,11 @@ UNSEEN is an evidence-driven release gate for a human and AI agents working toge
 
 The signature flow is a checkout release that looks safe, an overlooked support requirement recovered in `support-room`, a real refund regression that blocks the candidate, an independently tested repair, and a human approval bound to the repaired commit and evidence digest.
 
-**Judges and first-time reviewers:** [Start with the one-page demo, proof and reproduction guide](docs/JUDGE_START_HERE.md). The final 2:20 product/real-Switch film is prepared locally but **still needs a public video URL and a completed human submission**. The repository itself is not an entry confirmation.
+**[Watch the UNSEEN demo (2:20, narrated, dashboard + real Switch footage)](https://youtu.be/EjP9Qr8VPoY)** · **[Judge's quickstart](docs/JUDGE_START_HERE.md)** · [Live Switch completion receipt](docs/LIVE_COMPLETION_RECEIPT_2026-11-05.md)
+
+Video provenance: dashboard walkthrough is a labeled replay of the recorded case; Switch Console shots are from the actual local Switch session. The final outcome was a release-preview authorization, not production deployment.
+
+**Judges and first-time reviewers:** [Start with the one-page demo, proof and reproduction guide](docs/JUDGE_START_HERE.md). The final 2:20 product/real-Switch film has a [YouTube upload](https://youtu.be/EjP9Qr8VPoY), provided by the entrant. The entrant should verify logged-out playback and final HD processing. **The official hackathon submission is still to be completed manually**. The repository itself is not an entry confirmation.
 
 ## Editorial release dashboard
 
@@ -36,7 +40,7 @@ Open `http://127.0.0.1:4173`. This one command executes the real local protocol-
 
 The screen prominently marks **LOCAL PROTOCOL HARNESS** and never claims these locally constructed Switch frames came from an authenticated live Switch connection. A separate ignored `.unseen/local-harness-board.json` holds this preview; the command does **not** overwrite `.unseen/state.json`, alter the operator's live workflow, contact Switch, or deploy anything. The demo checkout is temporary and removed after execution, so its Git SHA is evidence of the test run, not a durable checkout the judge can fetch. Re-run the command to reproduce it.
 
-For the real multi-agent session, see the [live Switch receipt](docs/LIVE_COMPLETION_RECEIPT_2026-11-05.md) and the [video capture guide](docs/SUBMISSION_DEMO_GUIDE.md). A recorded real Switch Console session remains necessary to demonstrate the live integration publicly.
+For the real multi-agent session, see the [uploaded narrated demo](https://youtu.be/EjP9Qr8VPoY), [live Switch receipt](docs/LIVE_COMPLETION_RECEIPT_2026-11-05.md) and [video capture guide](docs/SUBMISSION_DEMO_GUIDE.md). The film includes actual recorded Switch Console footage and labeled dashboard replay.
 
 ## Completed live Switch result · November 5, 2026
 
@@ -52,7 +56,7 @@ For the real multi-agent session, see the [live Switch receipt](docs/LIVE_COMPLE
 
 **Reproduce independently:** `npm install --ignore-scripts && npm test && npm run demo`. The last command is explicitly a **local protocol harness**, not a real Switch session. For the real multi-agent Switch sequence, use the documented Switch Core/Console setup and actual authenticated room participants. Local `localhost` message links are **not public**; a judge-visible video recording of the actual Console is necessary.
 
-**Submission status:** code and live proof documented; a public screen recording and the official hackathon submission are separate next steps, **not yet claimed complete**.
+**Submission status:** code and live proof documented; [YouTube demo link](https://youtu.be/EjP9Qr8VPoY) received from the entrant. Logged-out video playback has not been independently checked here. **Official hackathon submission is not yet confirmed.**
 
 ## What is real here
 

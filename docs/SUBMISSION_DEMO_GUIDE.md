@@ -2,7 +2,7 @@
 
 **Hackathon:** Flip the Switch (WeMakeDevs × DevTools Academy × Switch)  
 **Target track:** Best Business Workflow  
-**Current video:** A **140-second narrated MP4** now exists as a local export and dashboard-replay/real-Switch proof cut. The 75–100-second table below remains an *older suggested structure*, not the final film's actual timing. The video must still be uploaded to a publicly accessible site and submitted manually. See [the judge's guide](JUDGE_START_HERE.md).
+**Current video:** A **140-second narrated MP4** now exists as a local export and dashboard-replay/real-Switch proof cut. The 75–100-second table below remains an *older suggested structure*, not the final film's actual timing. The entrant supplied [the YouTube video](https://youtu.be/EjP9Qr8VPoY). Independently verify logged-out playback/HD before completing the official human submission. See [the judge's guide](JUDGE_START_HERE.md).
 
 **Recorded live result:** The actual Gatekeeper authorized the repaired checkout preview with audit receipt `c79574fe-1be5-427f-8788-36f8a9b9620d`. **No production deployment occurred.**
 
@@ -46,7 +46,7 @@ Judges who do not have the original local Switch server can run `npm ci && npm r
 - Exact real Switch receipt: [Live completion record](LIVE_COMPLETION_RECEIPT_2026-11-05.md)
 - Original blocked proof: [Live BLOCKED release](LIVE_BLOCKED_RELEASE_2026-11-05.md)
 - One-command reproducibility: `npm install --ignore-scripts && npm test && npm run demo`. The last command is **a local harness**, not a claim of actual Switch traffic.
-- **Still needed:** a public video URL and completion of the hackathon's official human submission form. No video or submission has been claimed.
+- **Video link received:** [UNSEEN narrated demo](https://youtu.be/EjP9Qr8VPoY) (entrance-supplied; playback visibility not independently verified). **Still needed:** official human submission and confirmation. Neither GitHub updates nor a YouTube upload by themselves constitute an official entry.
 
 **Official schedule:** submissions close **November 7, 2026 at 11:59 PM IST**. The official hackathon asks for the repo, demo video and README. Enter and submit through the official hackathon site. Automation/bot submission is prohibited by official rules.
 

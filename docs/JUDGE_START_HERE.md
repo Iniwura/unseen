@@ -2,6 +2,7 @@
 
 **Track:** Flip the Switch / Best Business Workflow ($2,000)  
 **Project:** [UNSEEN](https://github.com/Iniwura/unseen)  
+**Demo video:** [Watch 2:20 UNSEEN walkthrough](https://youtu.be/EjP9Qr8VPoY) (uploaded by entrant; logged-out playback should be checked)  
 **Submission deadline:** November 7, 2026 at 11:59 PM IST.
 
 ## What is it?
@@ -51,7 +52,7 @@ The release owner and independent engineering/support agents operate in differen
 ## What to submit
 
 - [Public repository](https://github.com/Iniwura/unseen).
-- The final **2:20** demo MP4 showing real Switch proof and labeled dashboard replay. **Upload to a publicly accessible video URL; this repository does not yet contain one.**
+- [Final **2:20** demo video](https://youtu.be/EjP9Qr8VPoY) showing real Switch proof and labeled dashboard replay. Entrant should verify logged-out playback and HD before submission.
 - This page and [README](../README.md).
 - Official human-registered hackathon submission form. **Automated/bot submissions are prohibited by the official rules.**
 
