@@ -81,7 +81,7 @@ const Pill: React.FC<{text:string; tone?:'green'|'red'|'neutral'; style?:React.C
 );
 
 const Intro: React.FC<{frame:number}> = ({frame}) => {
-  const alpha=blend(frame,4,15,77,98);
+  const alpha=f(frame,4,15) * (frame<96 ? 1 : 0);
   const item=f(frame,18,42);
   const check=f(frame,37,53);
   const x=(1-item)*64;
@@ -132,7 +132,7 @@ const Intro: React.FC<{frame:number}> = ({frame}) => {
 };
 
 const Rule: React.FC<{frame:number}> = ({frame}) => {
-  const alpha=blend(frame,82,100,181,205);
+  const alpha=frame>=96 && frame<187 ? 1 : 0;
   const s=f(frame,98,127), card=f(frame,116,148);
   const lineLength=f(frame,142,173);
   return (
@@ -200,7 +200,7 @@ const NumberCard: React.FC<{frame:number;start:number;label:string;amount:string
 };
 
 const Regression:React.FC<{frame:number}> = ({frame})=>{
-  const alpha=blend(frame,178,197,286,311);
+  const alpha=frame>=187 && frame<294 ? 1 : 0;
   const violation=f(frame,255,281);
   return (
     <div style={{position:'absolute',inset:0,opacity:alpha,pointerEvents:'none'}}>
@@ -217,16 +217,16 @@ const Regression:React.FC<{frame:number}> = ({frame})=>{
           fontSize:18,fontWeight:750,letterSpacing:1.5,marginBottom:19}}>
           <span>CUMULATIVE REFUND</span><span>CAPTURED LIMIT / $100</span>
         </div>
-        <div style={{height:28,background:'#E6E8E0',borderRadius:15,position:'relative'}}>
+        <div style={{height:28,width:1520,background:'#E6E8E0',borderRadius:15,position:'relative'}}>
           <div style={{position:'absolute',left:0,top:0,bottom:0,width:(100*f(frame,231,266))+'%',
             borderRadius:15,background:C.green,overflow:'hidden'}}/>
-          <div style={{position:'absolute',left:0,top:0,bottom:0,width:(100*f(frame,252,282))+'%',
-            borderRadius:15,background:C.red,clipPath:'inset(0 0 0 90.9%)'}}/>
-          <div style={{position:'absolute',right:'9.1%',top:-12,width:3,height:52,background:C.ink,
+          <div style={{position:'absolute',left:'100%',top:0,bottom:0,width:(10*violation)+'%',
+            borderRadius:'0 15px 15px 0',background:C.red}}/>
+          <div style={{position:'absolute',right:0,top:-12,width:3,height:52,background:C.ink,
             transform:'scaleY('+f(frame,245,262)+')'}}/>
         </div>
         <div style={{display:'flex',justifyContent:'space-between',marginTop:21}}>
-          <span style={{...mono,fontSize:18,color:C.muted}}>captured $100</span>
+          <span style={{...mono,fontSize:18,color:C.muted}}>limit at $100 / actual attempted $110</span>
           <span style={{color:C.red,fontSize:27,letterSpacing:-1.1,fontWeight:800,
             opacity:violation}}>Attempted total $110 · exceeds limit by $10</span>
         </div>
@@ -236,7 +236,7 @@ const Regression:React.FC<{frame:number}> = ({frame})=>{
 };
 
 const Blocked:React.FC<{frame:number}> = ({frame})=>{
-  const show=f(frame,297,316);
+  const show=f(frame,294,310);
   const line=f(frame,314,332);
   const seal=spring({frame:Math.max(0,frame-326),fps:30,config:{damping:16,stiffness:165,mass:1}});
   return (
