@@ -1,0 +1,21 @@
+Most release failures don't start with broken code. They start with information nobody connected.
+
+A build can pass every routine test while a critical rule sits in another team's conversation.
+
+UNSEEN closes that gap.
+
+For this checkout release, engineering submitted an exact Git commit to Switch. The baseline passed.
+
+But support had an overlooked rule: total refunds must never exceed the payment captured.
+
+UNSEEN retrieved that evidence, ran an independent regression against the submitted commit, and exposed the failure: a second refund could push the total past the limit.
+
+The gate closed. No approval by assumption.
+
+Engineering fixed the bug at a new commit. UNSEEN verified that exact revision, reran the tests, and required fresh evidence from both teams.
+
+Only after those checks did a human authorize the verified release preview.
+
+Every decision is traceable. Nothing quietly bypasses the gate.
+
+UNSEEN. The release gate that asks for proof, before permission.
