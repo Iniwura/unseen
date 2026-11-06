@@ -2,6 +2,8 @@
 
 **Hackathon:** Flip the Switch (WeMakeDevs × DevTools Academy × Switch)  
 **Target track:** Best Business Workflow  
+**Current video:** A **140-second narrated MP4** now exists as a local export and dashboard-replay/real-Switch proof cut. The 75–100-second table below remains an *older suggested structure*, not the final film's actual timing. The video must still be uploaded to a publicly accessible site and submitted manually. See [the judge's guide](JUDGE_START_HERE.md).
+
 **Recorded live result:** The actual Gatekeeper authorized the repaired checkout preview with audit receipt `c79574fe-1be5-427f-8788-36f8a9b9620d`. **No production deployment occurred.**
 
 ## One-sentence submission description
