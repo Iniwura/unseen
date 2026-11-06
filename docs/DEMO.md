@@ -2,6 +2,8 @@
 
 **Official track:** Flip the Switch / Best Business Workflow.
 
+**Narrated video:** [UNSEEN — dashboard + real Switch demo](https://youtu.be/EjP9Qr8VPoY) (2 minutes 20 seconds).
+
 For the concise judge's guide, see [JUDGE_START_HERE.md](JUDGE_START_HERE.md).
 
 ## The recorded story — November 5, 2026
@@ -35,8 +37,10 @@ For live configuration see [the README Switch setup](../README.md#switch-setup) 
 - [x] Verified live blocked → repaired → authorized **preview** story.
 - [x] Green GitHub CI for Linux and Windows (95 tests each; zero known production dependency advisories at last run).
 - [x] Prepared 2-minute-20-second MP4 with narrator and an explanatory dashboard replay.
-- [ ] Upload MP4 to a **publicly viewable** video URL and test playback in a logged-out browser.
-- [ ] Put the public video link in the README and official entry.
+- [x] Entrant provided a YouTube upload link: [UNSEEN demo](https://youtu.be/EjP9Qr8VPoY).
+- [ ] **Entrant to verify** publicly viewable playback and HD availability in a logged-out browser.
+- [x] Add demo link to the README and judge guide.
+- [ ] Paste the same YouTube link into the official submission form.
 - [ ] Complete the official hackathon entry **manually** under the entrant's real identity and confirm the submission is accepted.
 - [ ] Verify entry eligibility and prize-verification details personally.
 
