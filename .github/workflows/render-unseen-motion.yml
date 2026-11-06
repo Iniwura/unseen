@@ -1,0 +1,49 @@
+name: Render UNSEEN motion study
+
+on:
+  push:
+    branches:
+      - film/**
+    paths:
+      - 'motion/**'
+      - '.github/workflows/render-unseen-motion.yml'
+  pull_request:
+    paths:
+      - 'motion/**'
+      - '.github/workflows/render-unseen-motion.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: motion
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install exact Remotion dependencies
+        run: npm install --no-audit --no-fund
+      - name: Validate TypeScript
+        run: npx tsc --noEmit
+      - name: Ensure Remotion browser
+        run: npx remotion browser ensure
+      - name: Render actual Remotion composition
+        run: npm run render -- --concurrency=2 --log=error
+      - name: Render frame 315 for visual QA
+        run: npx remotion still src/index.ts UNSEENProofStudy out/frame-blocked.png --frame=315
+      - name: Upload render and still
+        uses: actions/upload-artifact@v4
+        with:
+          name: UNSEEN-remotion-study
+          path: |
+            motion/out/UNSEEN_Proof_Study.mp4
+            motion/out/frame-blocked.png
+          if-no-files-found: error
+          retention-days: 14
