@@ -1,53 +1,49 @@
-# UNSEEN demo and submission checklist
+# UNSEEN — Verified demo and submission checklist
 
-## The two-minute story
+**Official track:** Flip the Switch / Best Business Workflow.
 
-1. In `release-room`, the release owner asks whether checkout commit `A` is safe.
-2. The engineering agent reports the baseline test pass. UNSEEN shows support evidence is still missing.
-3. The investigator finds the support acceptance requirement in `support-room` and sends its content digest through Switch.
-4. The allowlisted runner executes the real refund regression against commit `A`; the test exits `1` and UNSEEN turns red.
-5. The coding agent fixes the successive-refund bug and reports the new commit `B`.
-6. UNSEEN supersedes `A`, independently runs baseline and refund tests against exact commit `B`, and shows both exit `0`.
-7. The release owner requests a fresh challenge and approves `B` in `release-room`.
-8. UNSEEN issues one execution capability, creates a receipt, and opens the counterfactual: without the recovered support fact, the release would have remained pending or been attempted without the gate.
+For the concise judge's guide, see [JUDGE_START_HERE.md](JUDGE_START_HERE.md).
 
-## Local verification
+## The recorded story — November 5, 2026
+
+1. The **human release owner** posted the checkout release request in Switch `release-room`, bound to vulnerable commit `a921b8a5d51c0a8a58fcdcd59c0963ac012d8627`.
+2. The **engineering agent** supplied engineering baseline evidence. The baseline passed.
+3. In `support-room`, the **support investigator** recovered the owner-authored refund rule: cumulative refunds must not exceed captured payment. This was a demo requirement, not a real customer support ticket.
+4. The Gatekeeper independently ran the fixed regression against the exact original checkout. It failed; the original decision became **BLOCKED**.
+5. The **engineering agent** authored the repair commit `f1f440a8f8a1f71052e27d6bad4c8c5acbd9e078`. No separate coding agent was authorized for this specific live flow.
+6. The Gatekeeper checked the repair's exact parent, contents and tests. It kept the original decision as **SUPERSEDED** and opened a new evidence review. Engineering and support agents supplied fresh messages on the new revision.
+7. A human explicitly approved the current verified repair, with a fresh single-use challenge bound to that SHA and evidence. The Gatekeeper issued receipt `c79574fe-1be5-427f-8788-36f8a9b9620d`.
+8. Final outcome: **release-preview authorization only**. No production deployment, payment, or historical customer incident.
+
+This is documented as a **real Switch/Mattermost local session** in [LIVE_COMPLETION_RECEIPT_2026-11-05.md](LIVE_COMPLETION_RECEIPT_2026-11-05.md). The operator's local `localhost` links are not public.
+
+## Reproduce the behavior without private Switch credentials
 
 ```bash
 npm ci
 npm test
-npm run demo
-npm run replay
+npm run demo:board
 ```
 
-The local run is useful for judging the actual policy and runner behavior. Its Switch frames are a protocol harness and must be labelled that way.
+Open `http://127.0.0.1:4173` in a browser. This is a functioning read-only dashboard fed by a **locally executed protocol harness**, not a live Switch session. It explicitly displays the provenance label. A fresh run produces new temporary checkout SHAs; it does not recover the separate operator's authenticated Switch data.
 
-To clear only durable local state before replaying the bridge, run `npm run reset:local`. For host setup, copy `.env.example` to `.env.local` and run `npm run diagnose:switch`; the diagnostic reports presence and reachability only, never secret values.
+For live configuration see [the README Switch setup](../README.md#switch-setup) and official Switch docs. A person must provide real room memberships, linked human authorization and agent IDs on their own local Switch server.
 
-## Live recording checklist
+## Final publication checklist
 
-- [ ] Switch Console is signed in, the local server is running, and `npm run diagnose:switch` reports the authenticated bridge reachable.
-- [ ] Bundled Mattermost is linked and `release-room` / `support-room` are visible.
-- [ ] The agent API key is in a local secret store, not the terminal recording.
-- [ ] Real room IDs and opaque participant IDs are configured in the adapter.
-- [ ] A real `@` mention receives a visible UNSEEN reply before recording the workflow.
-- [ ] The camera shows the Switch room and UNSEEN board, not credentials.
-- [ ] Human release owner requests checkout commit `A` in `release-room`.
-- [ ] UNSEEN visibly requests missing engineering/support evidence; the investigator retrieves support evidence through Switch.
-- [ ] The real allowlisted regression fails with exit code `1` against exact commit `A`, and the release gate blocks.
-- [ ] The coding agent reports repaired exact commit `B`; UNSEEN supersedes `A` and reruns both independent checks on `B`.
-- [ ] The approval message includes the nonce-bound challenge fields, without showing any secret key.
-- [ ] The human approves exact commit `B` in `release-room`; the final receipt contains the same SHA and evidence digest.
-- [ ] Disconnect/reconnect or a controlled cursor gap is shown as recovery, with no automatic approval or release during the gap.
-- [ ] The final receipt, audit trail, and counterfactual are visible.
-- [ ] The README links the official Switch docs and clearly distinguishes live evidence from the local harness.
+- [x] Public repo, reproducible harness and real Switch evidence documented.
+- [x] Verified live blocked → repaired → authorized **preview** story.
+- [x] Green GitHub CI for Linux and Windows (95 tests each; zero known production dependency advisories at last run).
+- [x] Prepared 2-minute-20-second MP4 with narrator and an explanatory dashboard replay.
+- [ ] Upload MP4 to a **publicly viewable** video URL and test playback in a logged-out browser.
+- [ ] Put the public video link in the README and official entry.
+- [ ] Complete the official hackathon entry **manually** under the entrant's real identity and confirm the submission is accepted.
+- [ ] Verify entry eligibility and prize-verification details personally.
 
-## Evidence labels
+## Claims and security
 
-- `live-switch`: an event observed from the bearer-authenticated Switch WebSocket and a real room/participant mapping.
-- `simulated-or-unverified`: local protocol fixtures, unit tests, and `npm run demo`.
-- Never use a local receipt, fixture ID, or test output as evidence that Switch collaboration happened.
+Keep the video labels `Dashboard replay` and `Local protocol harness` visible where appropriate. Use the real Switch recording for authentic room messages. Never show API keys, full approval commands, one-use approval nonce, bearer tokens, or the operator's raw `.unseen` state. Approval through Switch does not mean an actual production deployment.
 
-## Submission claims to keep precise
+Do not imply a coding agent authored the recorded repair. It was authored by the **engineering agent**, and Gatekeeper independently verified the result.
 
-Say “verified in the live Switch run” only after the adapter has been connected to the authenticated Switch bridge and the messages have been observed in Mattermost. Say “locally tested protocol harness” for `npm run demo` and the unit/integration tests. Do not describe the local harness as a Switch Console event.
+[Official hackathon](https://www.wemakedevs.org/hackathons/switch) · [submission requirements](https://www.devtoolsacademy.com/hackathons/flip-the-switch)
